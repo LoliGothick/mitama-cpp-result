@@ -38,6 +38,13 @@ markdown_extensions:
   - pymdownx.superfences
   - mdx_math:
       enable_dollar_delimiter: true
+  - markdown_include.include:
+      base_path: docs
+  - toc:
+      permalink: True
+      separator: "_"
+      baselevel: 1
+
 extra_javascript: 
   - https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML
   - mathjaxhelper.js
@@ -45,31 +52,62 @@ extra_css:
   - "https://maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css"
   - cppmap_styles.css
 # Page tree
+
 nav:
   - Home: README.md
-  - Result 101:
-    - Introduction: Result101/intro.md
-    - Special Members: Result101/special_members.md
-  - API Reference:
-    - CHANGELOG: api/README.md
-    - is_ok: api/is_ok.md
-    - is_err: api/is_err.md
-    - ok: api/ok.md
-    - err: api/err.md
-    - map: api/map.md
-    - map_or_else: api/map_or_else.md
-    - map_err: api/map_err.md
-    - and: api/and.md
-    - and_then: api/and_then.md
-    - or: api/or.md
-    - or_else: api/or_else.md
-    - unwrap_or: api/unwrap_or.md
-    - unwrap_or_else: api/unwrap_or_else.md
-    - unwrap: api/unwrap.md
-    - unwrap_err: api/unwrap_err.md
-    - unwrap_or_default: api/unwrap_or_default.md
-    - transpose: api/transpose.md
-    - operator==: api/equality.md
-  - Meta Function Reference:
-    - is_result: meta/is_result.md
-    - is_result_with: meta/is_result_with.md
+  - maybe:
+    - Maybe 101: maybe/intro.md
+    - Special Members: maybe/special_members.md
+    - API Reference: maybe/APIs.md
+    - "": maybe/comparisons.md # TODO
+    - "": maybe/_APIs/is_just.md
+    - "": maybe/_APIs/is_nothing.md
+    - "": maybe/_APIs/as_ref.md
+    - "": maybe/_APIs/expect.md
+    - "": maybe/_APIs/unwrap.md
+    - "": maybe/_APIs/unwrap_or.md
+    - "": maybe/_APIs/unwrap_or_else.md
+    - "": maybe/_APIs/map.md
+    - "": maybe/_APIs/map_or.md
+    - "": maybe/_APIs/map_or_else.md
+    - "": maybe/_APIs/ok_or.md
+    - "": maybe/_APIs/ok_or_else.md
+    - "": maybe/_APIs/conj.md
+    - "": maybe/_APIs/and_then.md
+    - "": maybe/_APIs/filter.md
+    - "": maybe/_APIs/disj.md
+    - "": maybe/_APIs/or_else.md
+    - "": maybe/_APIs/get_or_emplace.md
+    - "": maybe/_APIs/get_or_emplace_with.md
+    - "": maybe/_APIs/replace.md
+    - "": maybe/_APIs/cloned.md
+    - "": maybe/_APIs/unwrap_or_default.md
+    - "": maybe/_APIs/transpose.md
+    - "": maybe/_APIs/flatten.md
+
+  - result:
+    - Result 101: result/intro.md
+    - Special Members: result/special_members.md
+    - APIs: result/APIs.md
+    - "": result/_APIs/is_ok.md
+    - "": result/_APIs/is_err.md
+    - "": result/_APIs/ok.md
+    - "": result/_APIs/err.md
+    - "": result/_APIs/map.md
+    - "": result/_APIs/map_or_else.md
+    - "": result/_APIs/map_err.md
+    - "": result/_APIs/conj.md
+    - "": result/_APIs/and_then.md
+    - "": result/_APIs/disj.md
+    - "": result/_APIs/or_else.md
+    - "": result/_APIs/unwrap_or.md
+    - "": result/_APIs/unwrap_or_else.md
+    - "": result/_APIs/unwrap.md
+    - "": result/_APIs/unwrap_err.md
+    - "": result/_APIs/unwrap_or_default.md
+    - "": result/_APIs/transpose.md
+    - "": result/_APIs/equality.md
+    - Meta Functions: result/metafunctions.md
+    - "": result/_metafunctions/is_result.md
+    - "": result/_metafunctions/is_result_with.md
+    - CHANGELOG: result/_APIs/README.md
