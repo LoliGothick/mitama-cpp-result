@@ -80,15 +80,22 @@ nav:
     - "": maybe/_APIs/get_or_emplace.md
     - "": maybe/_APIs/get_or_emplace_with.md
     - "": maybe/_APIs/replace.md
+    - "": maybe/_APIs/replace_with.md
     - "": maybe/_APIs/cloned.md
     - "": maybe/_APIs/unwrap_or_default.md
     - "": maybe/_APIs/transpose.md
     - "": maybe/_APIs/flatten.md
-
+    - "": maybe/_APIs/and_finally.md
+    - "": maybe/_APIs/or_finally.md
+    - "": maybe/_APIs/and_peek.md
+    - "": maybe/_APIs/or_peek.md
   - result:
     - Result 101: result/intro.md
     - Special Members: result/special_members.md
     - APIs: result/APIs.md
+    - Meta Functions: result/metafunctions.md
+    - CHANGELOG: result/_APIs/README.md
+    - "": result/comparisons.md # TODO
     - "": result/_APIs/is_ok.md
     - "": result/_APIs/is_err.md
     - "": result/_APIs/ok.md
@@ -106,8 +113,9 @@ nav:
     - "": result/_APIs/unwrap_err.md
     - "": result/_APIs/unwrap_or_default.md
     - "": result/_APIs/transpose.md
-    - "": result/_APIs/equality.md
-    - Meta Functions: result/metafunctions.md
     - "": result/_metafunctions/is_result.md
     - "": result/_metafunctions/is_result_with.md
-    - CHANGELOG: result/_APIs/README.md
+    - "": result/_APIs/and_finally.md
+    - "": result/_APIs/or_finally.md
+    - "": result/_APIs/and_peek.md
+    - "": result/_APIs/or_peek.md

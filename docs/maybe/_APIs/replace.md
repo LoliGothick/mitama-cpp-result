@@ -1,10 +1,10 @@
-**replace(T& value) requires T is copyable -> maybe&lt;T&gt;**
+**replace(Args... args) -> maybe&lt;T&gt;**
 
 ```cpp
-maybe<T> replace(T& value) & ;
+maybe<T> replace(Args&&... args) & ;
 ```
 
-Replaces the actual value in the maybe by the value given in parameter, returning the old value if present, leaving a `just` value in its place without deinitializing either one.
+Replaces the actual value in the maybe by expression `std::forward<Args>(args)...`, returning the old value if present, leaving a `just` value in its place without deinitializing either one.
 
 **Example**
 

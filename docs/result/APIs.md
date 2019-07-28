@@ -49,6 +49,18 @@
 ## transpose
 {!result/_APIs/transpose.md!}
 
-## equality
-{!result/_APIs/equality.md!}
+## and_finally
 
+{!result/_APIs/and_finally.md!}
+
+## or_finally
+
+{!result/_APIs/or_finally.md!}
+
+## and_peek
+
+{!result/_APIs/and_peek.md!}
+
+## or_peek
+
+{!result/_APIs/or_peek.md!}

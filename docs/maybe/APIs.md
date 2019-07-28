@@ -78,6 +78,10 @@
 
 {!maybe/_APIs/replace.md!}
 
+## replace_with
+
+{!maybe/_APIs/replace_with.md!}
+
 ## cloned
 
 {!maybe/_APIs/cloned.md!}
@@ -94,3 +98,18 @@
 
 {!maybe/_APIs/flatten.md!}
 
+## and_finally
+
+{!maybe/_APIs/and_finally.md!}
+
+## or_finally
+
+{!maybe/_APIs/or_finally.md!}
+
+## and_peek
+
+{!maybe/_APIs/and_peek.md!}
+
+## or_peek
+
+{!maybe/_APIs/or_peek.md!}
