@@ -37,7 +37,7 @@ int main() {
     x.expect("the world is ending"); // panics with `the world is ending`
   }
   catch ( mitama::runtime_panic const& panic ) {
-    std::err << panic.what() << std::endl; // runtime panicked at 'the world is ending'
+    std::cerr << panic.what() << std::endl; // runtime panicked at 'the world is ending'
   }
 }
 // end example
