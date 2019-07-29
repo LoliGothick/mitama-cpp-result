@@ -16,7 +16,7 @@ using namespace mitama;
 
 int main() {
     auto x = 12;
-    maybe opt_x = just(x);
+    maybe<int&> opt_x = just(x);
     assert(opt_x == just(12));
     assert(&(opt_x.unwrap()) == &x);
     auto cloned = opt_x.cloned();
