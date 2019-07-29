@@ -42,3 +42,4 @@ assert(x.map_or_else([k]{ return 2 * k; }, &std::string::size) == 3);
 maybe<std::string> y = nothing;
 assert(y.map_or_else([k]{ return 2 * k; }, &std::string::size) == 42);
 ```
+

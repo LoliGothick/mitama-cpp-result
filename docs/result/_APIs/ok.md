@@ -2,27 +2,27 @@
 
 ```cpp
 constexpr auto result<T, E>::ok() &
-    -> boost::optional<const T> ;
+    -> maybe<const T> ;
 
 constexpr auto result<T, E>::ok() const &
-    -> boost::optional<const T> ;
+    -> maybe<const T> ;
 
 constexpr auto result<T, E>::ok() &&
-    -> boost::optional<const T> ;
+    -> maybe<const T> ;
 
 constexpr auto mut_result<T, E>::ok() &
-    -> boost::optional<T> ;
+    -> maybe<T> ;
 
 constexpr auto mut_result<T, E>::ok() const &
-    -> boost::optional<const T> ;
+    -> maybe<const T> ;
 
 constexpr auto mut_result<T, E>::ok() &&
-    -> boost::optional<T> ;
+    -> maybe<T> ;
 ```
 
-Converts from `basic_result` to `boost::optional`.
+Converts from `basic_result` to `maybe`.
 
-Converts self into an `boost::optional`, and discarding the failure value, if any.
+Converts self into an `maybe`, and discarding the failure value, if any.
 
 Note that these functions propagate mutability to optional element types.
 
@@ -30,12 +30,12 @@ Note that these functions propagate mutability to optional element types.
 
 ```cpp
 result<unsigned, std::string> x = success(2);
-assert(x.ok() == Some(2));
+assert(x.ok() == just(2));
 result<unsigned, std::string> y = failure("Nothing here");
-assert(y.ok() == None);
+assert(y.ok() == nothing);
 ```
 
 **Remarks**
 
 If self is rvalue and `T` is a reference type,
-this function returns `boost::optional<dangling<std::reference_wrapper<std::remove_reference_t<T>>>>`.
+this function returns `maybe<dangling<std::reference_wrapper<std::remove_reference_t<T>>>>`.

@@ -2,27 +2,27 @@
 
 ```cpp
 constexpr auto result<T, E>::err() &
-    -> boost::optional<const E> ;
+    -> maybe<const E> ;
 
 constexpr auto result<T, E>::err() const &
-    -> boost::optional<const E> ;
+    -> maybe<const E> ;
 
 constexpr auto result<T, E>::err() &&
-    -> boost::optional<const E> ;
+    -> maybe<const E> ;
 
 constexpr auto mut_result<T, E>::err() &
-    -> boost::optional<E> ;
+    -> maybe<E> ;
 
 constexpr auto mut_result<T, E>::err() const &
-    -> boost::optional<const E> ;
+    -> maybe<const E> ;
 
 constexpr auto mut_result<T, E>::err() &&
-    -> boost::optional<E> ;
+    -> maybe<E> ;
 ```
 
-Converts from `basic_result` to `boost::optional`.
+Converts from `basic_result` to `maybe`.
 
-Converts self into an `boost::optional`, and discarding the success value, if any.
+Converts self into an `maybe`, and discarding the success value, if any.
 
 Note that these functions propagate mutability to optional element types.
 
@@ -30,12 +30,12 @@ Note that these functions propagate mutability to optional element types.
 
 ```cpp
 result<unsigned, std::string> x = success(2);
-assert(x.err() == None);
+assert(x.err() == nothing);
 result<unsigned, std::string> y = failure("Nothing here");
-assert(y.err() == Some("Nothing here"));
+assert(y.err() == just("Nothing here"s));
 ```
 
 **Remarks**
 
 If self is rvalue and `E` is a reference type,
-this function returns `boost::optional<dangling<std::reference_wrapper<std::remove_reference_t<E>>>>`.
+this function returns `maybe<dangling<std::reference_wrapper<std::remove_reference_t<E>>>>`.
