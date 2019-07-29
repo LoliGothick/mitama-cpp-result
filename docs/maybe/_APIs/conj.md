@@ -10,24 +10,36 @@ Returns `nothing` if the `lhs` is `nothing`, otherwise returns `rhs`.
 **Example**
 
 ```cpp
-{
-  maybe x = just(2);
-  maybe<std::string> y = nothing;
-  assert(x.conj(y) == nothing);
+```
+```cpp
+// begin example
+#include <mitama/maybe/maybe.hpp>
+#include <cassert>
+#include <string>
+using namespace mitama;
+using namespace std::string_literals;
+
+int main() {
+  {
+    maybe x = just(2);
+    maybe<std::string> y = nothing;
+    assert(x.conj(y) == nothing);
+  }
+  {
+    maybe<int> x = nothing;
+    maybe y = just("foo"s);
+    assert(x.conj(y) == nothing);
+  }
+  {
+    maybe x = just(2);
+    maybe y = just("foo"s);
+    assert(x.conj(y) == just("foo"s));
+  }
+  {
+    maybe<int> x = nothing;
+    maybe<std::string> y = nothing;
+    assert(x.conj(y) == nothing);
+  }
 }
-{
-  maybe<int> x = nothing;
-  maybe y = just("foo");
-  assert(x.conj(y) == nothing);
-}
-{
-  maybe x = just(2);
-  maybe y = just("foo");
-  assert(x.conj(y) == just("foo"));
-}
-{
-  maybe<int> x = nothing;
-  maybe<std::string> y = nothing;
-  assert(x.conj(y) == nothing);
-}
+// end example
 ```

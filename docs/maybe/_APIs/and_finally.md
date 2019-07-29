@@ -30,8 +30,16 @@ Invokes the provided function with the contained value (if any), or doing nothin
 **Example**
 
 ```cpp
-maybe x = just(42);
-int hook = 0;
-assert(x.and_peek([&hook](int const& v){ hook = v; }) == just(42));
-assert(hook == 42);
+// begin example
+#include <mitama/maybe/maybe.hpp>
+#include <cassert>
+using namespace mitama;
+
+int main() {
+    maybe x = just(42);
+    int hook = 0;
+    assert(x.and_peek([&](int const& v){ hook = v; }) == just(42));
+    assert(hook == 42);
+}
+// end example
 ```

@@ -17,16 +17,28 @@ Raise `mitama::runtime_panic` if the value is a `nothing` with a custom panic me
 **Example**
 
 ```cpp
-{
-    maybe x = just("value"s);
-    assert( x.expect("the world is ending"s) == "value"s );
-}
-try {
-    maybe<int> x = nothing;
-    x.expect("the world is ending"); // panics with `the world is ending`
-}
-catch ( mitama::runtime_panic cosnt & panic ) {
-    std::err << panic.what() << std::endl; // runtime panicked at 'the world is ending'
-}
 ```
 
+```cpp
+// begin example
+#include <mitama/maybe/maybe.hpp>
+#include <cassert>
+#include <string>
+using namespace mitama;
+using namespace std::string_literals;
+
+int main() {
+  {
+    maybe x = just("value"s);
+    assert( x.expect("the world is ending") == "value"s );
+  }
+  try {
+    maybe<int> x = nothing;
+    x.expect("the world is ending"); // panics with `the world is ending`
+  }
+  catch ( mitama::runtime_panic cosnt & panic ) {
+    std::err << panic.what() << std::endl; // runtime panicked at 'the world is ending'
+  }
+}
+// end example
+```

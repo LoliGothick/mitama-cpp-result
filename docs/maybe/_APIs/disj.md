@@ -11,24 +11,32 @@ Arguments passed to or are eagerly evaluated; if you are passing the result of a
 **Example**
 
 ```cpp
-{
-  maybe x = just(2);
-  maybe<int> y = nothing;
-  assert(x.disj(y) == just(2));
+// begin example
+#include <mitama/maybe/maybe.hpp>
+#include <cassert>
+using namespace mitama;
+
+int main() {
+  {
+    maybe x = just(2);
+    maybe<int> y = nothing;
+    assert(x.disj(y) == just(2));
+  }
+  {
+    maybe<int> x = nothing;
+    maybe y = just(100);
+    assert(x.disj(y) == just(100));
+  }
+  {
+    maybe x = just(2);
+    maybe y = just(100);
+    assert(x.disj(y) == just(2));
+  }
+  {
+    maybe<int> x = nothing;
+    maybe<int> y = nothing;
+    assert(x.disj(y) == nothing);
+  }
 }
-{
-  maybe<int> x = nothing;
-  maybe y = just(100);
-  assert(x.disj(y) == just(100));
-}
-{
-  maybe x = just(2);
-  maybe y = just(100);
-  assert(x.disj(y) == just(2));
-}
-{
-  maybe<int> x = nothing;
-  maybe<int> y = nothing;
-  assert(x.disj(y) == nothing);
-}
+// end example
 ```

@@ -34,11 +34,19 @@ Some languages call this operation flatmap.
 **Example**
 
 ```cpp
-auto sq = [](int x) -> maybe<int> { return just(x * x); };
-auto nope = [](...) -> maybe<int> { return nothing; };
+// begin example
+#include <mitama/maybe/maybe.hpp>
+#include <cassert>
+using namespace mitama;
 
-assert(maybe{just(2)}.and_then(sq).and_then(sq) == just(16));
-assert(maybe{just(2)}.and_then(sq).and_then(nope) == nothing);
-assert(maybe{just(2)}.and_then(nope).and_then(sq) == nothing);
-assert(nope().and_then(sq).and_then(sq) == nothing);
+int main() {
+    auto sq = [](int x) -> maybe<int> { return just(x * x); };
+    auto nope = [](...) -> maybe<int> { return nothing; };
+
+    assert(maybe{just(2)}.and_then(sq).and_then(sq) == just(16));
+    assert(maybe{just(2)}.and_then(sq).and_then(nope) == nothing);
+    assert(maybe{just(2)}.and_then(nope).and_then(sq) == nothing);
+    assert(nope().and_then(sq).and_then(sq) == nothing);
+}
+// end example
 ```
