@@ -1,23 +1,26 @@
-**filter(Pred predicate) -> maybe&lt;T&gt;**
+**maybe&lt;T&gt;::filter(Pred predicate) -> maybe&lt;T&gt;**
 
 ```cpp
-template <class Pred>
-std::enable_if_t<
+template <class T>
+class maybe {
+  template <class Pred>
+  std::enable_if_t<
     std::is_invocable_r_v<bool, Pred&&, T&>,
-maybe<T>>
-maybe<T>::filter(Pred&& predicate) & ;
+  maybe<T>>
+  maybe<T>::filter(Pred&& predicate) & ;
 
-template <class Pred>
-std::enable_if_t<
+  template <class Pred>
+  std::enable_if_t<
     std::is_invocable_r_v<bool, Pred&&, T const&>,
-maybe<T>>
-maybe<T>::filter(Pred&& predicate) const& ;
+  maybe<T>>
+  maybe<T>::filter(Pred&& predicate) const& ;
 
-template <class Pred>
-std::enable_if_t<
+  template <class Pred>
+  std::enable_if_t<
     std::is_invocable_r_v<bool, Pred&&, T&&>,
-maybe<T>>
-maybe<T>::filter(Pred&& predicate) && ;
+  maybe<T>>
+  maybe<T>::filter(Pred&& predicate) && ;
+};
 ```
 
 Returns `nothing` if the option is `nothing`, otherwise calls predicate with the wrapped value and returns:

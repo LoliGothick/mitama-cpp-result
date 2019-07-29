@@ -1,5 +1,5 @@
-**result&lt;T, E&gt;::and_then(O op) -> result&lt;U, E&gt;**
-**where O: T -> result&lt;U, E&gt;**
+**basic_result&lt;_, T, E&gt;::and_then(O op) -> basic_result&lt;_, U, E&gt;**
+**where O: T -> basic_result&lt;_, U, E&gt;**
 
 ```cpp
 template <mutability _mu, class T, class E>

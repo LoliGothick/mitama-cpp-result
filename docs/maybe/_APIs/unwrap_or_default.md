@@ -1,7 +1,10 @@
-**unwrap_or_default()**
+**maybe&lt;T&gt;::unwrap_or_default() -> T**
 
 ```cpp
-auto maybe<T>::unwrap_or_default() const & -> std::remove_reference_t<T> ;
+template <class T>
+class maybe {
+  auto maybe<T>::unwrap_or_default() const & -> std::remove_reference_t<T> ;
+};
 ```
 
 Returns the contained value or a default.

@@ -1,24 +1,27 @@
-**or_finally(F f) -> void**
-
+**maybe&lt;T&gt;::or_finally(F f) -> void**
+**where F: T -> void**
 
 ```cpp
-template <class F>
-constexpr
-std::enable_if_t<
+template <class T>
+class maybe {
+  template <class F>
+  constexpr
+  std::enable_if_t<
     std::is_invocable_v<F>>
-or_finally(F&& f) & ;
+  or_finally(F&& f) & ;
 
-template <class F>
-constexpr
-std::enable_if_t<
+  template <class F>
+  constexpr
+  std::enable_if_t<
     std::is_invocable_v<F>>
-or_finally(F&& f) const & ;
+  or_finally(F&& f) const & ;
 
-template <class F>
-constexpr
-std::enable_if_t<
+  template <class F>
+  constexpr
+  std::enable_if_t<
     std::is_invocable_v<F>>
-or_finally(F&& f) && ;
+  or_finally(F&& f) && ;
+};
 ```
 
 Invokes the provided function (if nothing), or doing nothing (if any).

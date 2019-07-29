@@ -1,27 +1,30 @@
-**or_peek(F f) -> maybe&lt;T&gt;**
-
+**maybe&lt;T&gt;::or_peek(F f) -> maybe&lt;T&gt;**
+**where F: T -> void**
 
 ```cpp
-template <class F>
-constexpr
-std::enable_if_t<
+template <class T>
+class maybe {
+  template <class F>
+  constexpr
+  std::enable_if_t<
     std::is_invocable_v<F>,
-maybe&>
-or_peek(F&& f) & ;
+  maybe&>
+  or_peek(F&& f) & ;
 
-template <class F>
-constexpr
-std::enable_if_t<
+  template <class F>
+  constexpr
+  std::enable_if_t<
     std::is_invocable_v<F>,
-maybe const&>
-or_peek(F&& f) const & ;
+  maybe const&>
+  or_peek(F&& f) const & ;
 
-template <class F>
-constexpr
-std::enable_if_t<
+  template <class F>
+  constexpr
+  std::enable_if_t<
     std::is_invocable_v<F>,
 maybe&&>
 or_peek(F&& f) && ;
+};
 ```
 
 Invokes the provided function and then return self (if nothing), or return self without doing anything (if any).

@@ -1,11 +1,14 @@
-**get_or_emplace(Args... args) -> T&**
+**maybe&lt;T&gt;::get_or_emplace(Args... args) -> T&**
 
 ```cpp
-template <class... Args>
-std::enable_if_t<
+template <class T>
+class maybe {
+  template <class... Args>
+  std::enable_if_t<
     std::is_constructible_v<T, Args&&...>,
-T&>
-get_or_emplace(Args&&... args) & ;
+  T&>
+  get_or_emplace(Args&&... args) & ;
+};
 ```
 
 Emplace constructs `T` into the maybe with expression `std::forward<Args>(args)...` if it is `nothing`, then returns a mutable reference to the contained value.

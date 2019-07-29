@@ -1,4 +1,4 @@
-**result&lt;T, E&gt;::map_or_else(Fallback _fallback, Map _map) -> U**  
+**basic_result&lt;_, T, E&gt;::map_or_else(Fallback _fallback, Map _map) -> U**  
 **where**  
 **Fallback: E -> U,**  
 **Map: T -> U,**  

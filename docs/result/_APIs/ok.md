@@ -1,4 +1,4 @@
-**result&lt;T, E&gt;::ok() -> maybe&lt;T&gt;**
+**basic_result&lt;_, T, E&gt;::ok() -> maybe&lt;T&gt;**
 
 ```cpp
 template <class T, class E>

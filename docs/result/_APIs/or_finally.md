@@ -1,5 +1,4 @@
-**or_finally(F f) -> void**
-
+**basic_result::or_finally(F f) -> void**
 
 ```cpp
 template <mutability _mu, class T, class E>

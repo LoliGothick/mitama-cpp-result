@@ -1,7 +1,10 @@
 **maybe&lt;maybe&lt;T&gt;&gt;::flatten() -> maybe&lt;T&gt;**
 
 ```cpp
-auto maybe<maybe<T>>::transpose() -> maybe<T> ;
+template <class T>
+class maybe {
+  auto maybe<maybe<T>>::transpose() -> maybe<T> ;
+};
 ```
 
 Converts from `maybe<maybe<T>>` to `maybe<T>`.

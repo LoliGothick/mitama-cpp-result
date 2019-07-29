@@ -1,15 +1,18 @@
-**ok_or(E err) -> result<T, E>**
+**maybe&lt;T&gt;::ok_or(E err) -> result<T, E>**
 
 ```cpp
-template <class E>
-auto maybe<T>::ok_or(E&& err) const& -> result<T, E> ;
+template <class T>
+class maybe {
+  template <class E>
+  auto maybe<T>::ok_or(E&& err) const& -> result<T, E> ;
 
-template <class E>
-auto maybe<T>::ok_or(E&& err) && -> result<std::remove_reference_t<T>, E> ;
+  template <class E>
+  auto maybe<T>::ok_or(E&& err) && -> result<std::remove_reference_t<T>, E> ;
 
-auto maybe<T>::ok_or() const& -> result<T, std::monostate> ;
+  auto maybe<T>::ok_or() const& -> result<T, std::monostate> ;
 
-auto maybe<T>::ok_or() && -> result<std::remove_reference_t<T>, std::monostate> ;
+  auto maybe<T>::ok_or() && -> result<std::remove_reference_t<T>, std::monostate> ;
+};
 ```
 
 Transforms the `maybe<T>` into a `result<T, E>`, mapping `just(v)` to `success(v)` and `nothing` to `failure(err)`.

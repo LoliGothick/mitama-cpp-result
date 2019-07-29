@@ -1,13 +1,16 @@
-**get_or_emplace_with(F f,Args... args) -> T&**
+**maybe&lt;T&gt;::get_or_emplace_with(F f,Args... args) -> T&**
 
 ```cpp
-template <class F, class... Args>
-std::enable_if_t<
+template <class T>
+class maybe {
+  template <class F, class... Args>
+  std::enable_if_t<
     std::conjunction_v<
-        std::is_invocable<F&&, Args&&...>,
-        std::is_constructible<T, std::invoke_result_t<F&&, Args&&...>>>,
-T&>
-get_or_emplace_with(F&& f, Args&&... args) & ;
+      std::is_invocable<F&&, Args&&...>,
+      std::is_constructible<T, std::invoke_result_t<F&&, Args&&...>>>,
+  T&>
+  get_or_emplace_with(F&& f, Args&&... args) & ;
+};
 ```
 
 Emplace constructs `T` into the maybe with expression `std::invoke(std::forward<F>(f), std::forward<Args>(args)...)` if it is `nothing`, then returns a mutable reference to the contained value.

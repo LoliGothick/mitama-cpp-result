@@ -1,9 +1,12 @@
-**as_ref()**
+**maybe&lt;T&gt;::as_ref() -> maybe&lt;T&&gt;**
 
 ```cpp
-auto maybe<T>::as_ref() & -> maybe<T&> ;
+template <class T>
+class maybe {
+  auto maybe<T>::as_ref() & -> maybe<T&> ;
 
-auto maybe<T>::as_ref() const& -> maybe<const T&> ;
+  auto maybe<T>::as_ref() const& -> maybe<const T&> ;
+};
 ```
 
 Converts from `maybe<T>&` to `maybe<T&>`.

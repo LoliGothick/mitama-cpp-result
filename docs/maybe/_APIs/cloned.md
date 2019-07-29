@@ -1,7 +1,11 @@
-**maybe&lt;T&&gt;::cloned() requires T is copyable -> maybe&lt;T&gt;**
+**maybe&lt;T&&gt;::cloned() -> maybe&lt;T&gt;**
+**where T is copyable**
 
 ```cpp
-auto maybe<T&>::cloned() & -> maybe<T>;
+template <class T>
+class maybe {
+  auto maybe<T&>::cloned() & -> maybe<T>;
+};
 ```
 
 Maps an `maybe<T&>` to an `maybe<T>` by deep copying the contents of the maybe.

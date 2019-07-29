@@ -1,4 +1,4 @@
-**result&lt;T, E&gt;::map(O op) -> result&lt;U, E&gt;**
+**basic_result&lt;_, T, E&gt;::map(O op) -> basic_result&lt;_, U, E&gt;**
 **where O: T -> U**
 
 ```cpp
@@ -30,7 +30,7 @@ int main() {
   assert(ok.map(_1 * 2) == success(4));
 
   result<int, int> err = failure(2);
-  assert(ok.map(_1 * 2) == failure(2));
+  assert(err.map(_1 * 2) == failure(2));
 }
 // end example
 ```

@@ -1,30 +1,33 @@
-**and_then(F f) -> std::invoke_result_t&lt;F, T&gt;**
-
+**maybe&lt;T&gt;::and_then(F f) -> maybe&lt;U&gt;**
+**where F: T -> maybe&lt;U&gt;**
 
 ```cpp
-template <class F>
-std::enable_if_t<
+template <class T>
+class maybe {
+  template <class F>
+  std::enable_if_t<
     std::conjunction_v<
-        std::is_invocable<F&&, T&>,
-        is_maybe<std::decay_t<std::invoke_result_t<F&&, T&>>>>,
-std::invoke_result_t<F&&, T&> >
-and_then(F&& f) & ;
+      std::is_invocable<F&&, T&>,
+      is_maybe<std::decay_t<std::invoke_result_t<F&&, T&>>>>,
+  std::invoke_result_t<F&&, T&> >
+  and_then(F&& f) & ;
 
-template <class F>
-std::enable_if_t<
+  template <class F>
+  std::enable_if_t<
     std::conjunction_v<
-        std::is_invocable<F&&, T const&>,
-        is_maybe<std::decay_t<std::invoke_result_t<F&&, T const&>>>>,
-std::invoke_result_t<F&&, T const&> >
-and_then(F&& f) const& ;
+      std::is_invocable<F&&, T const&>,
+      is_maybe<std::decay_t<std::invoke_result_t<F&&, T const&>>>>,
+  std::invoke_result_t<F&&, T const&> >
+  and_then(F&& f) const& ;
 
-template <class F>
-std::enable_if_t<
+  template <class F>
+  std::enable_if_t<
     std::conjunction_v<
-        std::is_invocable<F&&, T&>,
-        is_maybe<std::decay_t<std::invoke_result_t<F&&, T&&>>>>,
-std::invoke_result_t<F&&, T&> >
-and_then(F&& f) && ;
+      std::is_invocable<F&&, T&>,
+      is_maybe<std::decay_t<std::invoke_result_t<F&&, T&&>>>>,
+  std::invoke_result_t<F&&, T&> >
+  and_then(F&& f) && ;
+};
 ```
 
 Returns `nothing` if the option is `nothing`, otherwise calls `f` with the wrapped value and returns the result.

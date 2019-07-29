@@ -1,11 +1,14 @@
-**result&lt;&lt;T&gt;, E&gt;::transpose() -> maybe&lt;result&lt;T, E&gt;&gt;**
+**basic_result&lt;_, maybe&ltT&gt;, E&gt;::transpose() -> maybe&lt;basic_result&lt;_, T, E&gt;&gt;**
 
 ```cpp
-auto basic_result<_, maybe<T>, E>::transpose()
-  -> maybe<basic_result<_, T, E>> ;
+template <mutability _mu, class T, class E>
+class basic_result {
+  auto basic_result<_, maybe<T>, E>::transpose()
+    -> maybe<basic_result<_, T, E>> ;
 
-auto basic_result<_, maybe<T>, E>::transpose()
-  -> maybe<basic_result<_, T, E>> ;
+  auto basic_result<_, maybe<T>, E>::transpose()
+    -> maybe<basic_result<_, T, E>> ;
+};
 ```
 
 Transposes a `result` of an `maybe` into an `maybe` of a `result`.
@@ -17,9 +20,16 @@ Transposes a `result` of an `maybe` into an `maybe` of a `result`.
 **Example**
 
 ```cpp
-struct SomeError{};
+// begin example
+#include <mitama/result/result.hpp>
+#include <cassert>
+#include <string>
+using namespace mitama;
 
-result<maybe<int>, SomeError> x = success(just(5));
-maybe<result<int, SomeError>> y = just(success(5));
-assert_eq!(x.transpose(), y);
+int main() {
+  result<maybe<int>, std::string> x = success(just(5));
+  maybe<result<int, std::string>> y = just(success(5));
+  assert(x.transpose() == y);
+}
+// end example
 ```

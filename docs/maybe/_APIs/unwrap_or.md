@@ -1,24 +1,27 @@
-**unwrap_or(U u) -> common_type&lt;T, U&gt;**
+**maybe&lt;T&gt;::unwrap_or(T def) -> T**
 
 
 ```cpp
-template <class U>
-std::enable_if_t<
+template <class T>
+class maybe {
+  template <class U>
+  std::enable_if_t<
     meta::has_type<std::common_type<T&, U&&>>::value,
-std::common_type_t<T&, U&&>>
-maybe<T>::unwrap_or(U&& def) & ;
+  std::common_type_t<T&, U&&>>
+  maybe<T>::unwrap_or(U&& def) & ;
 
-template <class U>
-std::enable_if_t<
+  template <class U>
+  std::enable_if_t<
     meta::has_type<std::common_type<T const&, U&&>>::value,
-std::common_type_t<T const&, U&&>>
-maybe<T>::unwrap_or(U&& def) const& ;
+  std::common_type_t<T const&, U&&>>
+  maybe<T>::unwrap_or(U&& def) const& ;
 
-template <class U>
-std::enable_if_t<
+  template <class U>
+  std::enable_if_t<
     meta::has_type<std::common_type<T&&, U&&>>::value,
-std::common_type_t<T&&, U&&>>
-maybe<T>::unwrap_or(U&& def) && ;
+  std::common_type_t<T&&, U&&>>
+  maybe<T>::unwrap_or(U&& def) && ;
+};
 ```
 
 Returns the contained value or a default.

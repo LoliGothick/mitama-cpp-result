@@ -1,4 +1,4 @@
-**result&ltT, E&gt;::conj(result&ltU, E&gt; res) -> result&ltU, E&gt;**
+**basic_result&lt;_, T, E&gt;::conj(basic_result&lt;_, U, E&gt; res) -> basic_result&lt;_, U, E&gt;**
 
 ```cpp
 template <mutability _mu, class T, class E>

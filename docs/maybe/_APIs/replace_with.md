@@ -1,8 +1,12 @@
-**replace_with(F f, Args... args) -> maybe&lt;T&gt;**
+**maybe&lt;T&gt;::replace_with(F f, Args... args) -> maybe&lt;T&gt;**
+**where T is constructible from F(Args...)**
 
 ```cpp
-template <class F, class... Args>
-maybe<T> replace_with(F&& f, Args&&... args) & ;
+template <class T>
+class maybe {
+  template <class F, class... Args>
+  maybe<T> replace_with(F&& f, Args&&... args) & ;
+};
 ```
 
 Replaces the actual value in the maybe by expression `std::invoke(std::forward<F>(f), std::forward<Args>(args)...)`, returning the old value if present, leaving a `just` value in its place without deinitializing either one.

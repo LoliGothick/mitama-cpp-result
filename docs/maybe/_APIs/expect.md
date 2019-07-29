@@ -1,11 +1,14 @@
-**expect(msg)**
+**maybe&lt;T&gt;::expect(std::string_view msg) -> T&**
 
 ```cpp
-auto maybe<T>::expect(std::string_view msg) & -> T& ;
+template <class T>
+class maybe {
+  auto maybe<T>::expect(std::string_view msg) & -> T& ;
 
-auto maybe<T>::expect(std::string_view msg) const& -> T const& ;
+  auto maybe<T>::expect(std::string_view msg) const& -> T const& ;
 
-auto maybe<T>::expect(std::string_view msg) && -> T&& ;
+  auto maybe<T>::expect(std::string_view msg) && -> T&& ;
+};
 ```
 
 Unwraps a maybe, yielding the content of an `just`.

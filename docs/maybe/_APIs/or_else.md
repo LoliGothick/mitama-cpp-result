@@ -1,29 +1,33 @@
-**or_else(F f) -> maybe&lt;T&gt;**
+**maybe&lt;T&gt;::or_else(F f) -> maybe&lt;T&gt;**
+**where F: () -> maybe&lt;T&gt;**
 
 ```cpp
-template <class F>
-std::enable_if_t<
+template <class T>
+class maybe {
+  template <class F>
+  std::enable_if_t<
     std::conjunction_v<
-        std::is_invocable<F&&>,
-        is_maybe_with<std::decay_t<std::invoke_result_t<F&&>>, T>>,
-maybe<T>>
-maybe<T>::or_else(F&& f) & ;
+      std::is_invocable<F&&>,
+      is_maybe_with<std::decay_t<std::invoke_result_t<F&&>>, T>>,
+  maybe<T>>
+  maybe<T>::or_else(F&& f) & ;
 
-template <class F>
-std::enable_if_t<
+  template <class F>
+  std::enable_if_t<
     std::conjunction_v<
-        std::is_invocable<F&&>,
-        is_maybe_with<std::decay_t<std::invoke_result_t<F&&>>, T>>,
-maybe<T>>
-maybe<T>::or_else(F&& f) const& ;
+      std::is_invocable<F&&>,
+      is_maybe_with<std::decay_t<std::invoke_result_t<F&&>>, T>>,
+  maybe<T>>
+  maybe<T>::or_else(F&& f) const& ;
 
-template <class F>
-std::enable_if_t<
+  template <class F>
+  std::enable_if_t<
     std::conjunction_v<
-        std::is_invocable<F&&>,
-        is_maybe_with<std::decay_t<std::invoke_result_t<F&&>>, T>>,
-maybe<T>>
-maybe<T>::or_else(F&& f) && ;
+      std::is_invocable<F&&>,
+      is_maybe_with<std::decay_t<std::invoke_result_t<F&&>>, T>>,
+  maybe<T>>
+  maybe<T>::or_else(F&& f) && ;
+};
 ```
 
 Returns the maybe if it contains a value, otherwise calls `f` and returns the result.

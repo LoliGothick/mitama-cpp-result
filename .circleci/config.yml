@@ -18,7 +18,7 @@ orbs: # Inline Orbs for Document Integration
               apt upgrade -y && apt update -y && apt install -y git
               git clone https://github.com/LoliGothick/mitama-cpp-result.git
               find docs -type f -name \*.md | xargs awk -v i='0' '/\/\/ begin example$/,/\/\/ end example$/ { if($0 !~ "\/\/ .* example$") { print $0 >> FILENAME "-" i ".cpp" } else if ($0 ~ "\/\/ begin example$") { i++ } }'
-              find docs -type f -name \*.cpp | xargs -I{} $CXX -I./mitama-cpp-result/include/ {} -std=c++17
+              find docs -type f -name \*.cpp | xargs -I@ bash -c "$CXX -I./mitama-cpp-result/include/ @ -std=c++17 && ./a.out"
       build_book: # Document Build
         executor: mkdocs
         steps:

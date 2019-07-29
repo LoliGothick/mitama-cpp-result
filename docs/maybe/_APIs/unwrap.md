@@ -1,11 +1,14 @@
-**unwrap()**
+**maybe&lt;T&gt;::unwrap() -> T&**
 
 ```cpp
-auto maybe<T>::unwrap() & -> T& ;
+template <class T>
+class maybe {
+  auto maybe<T>::unwrap() & -> T& ;
 
-auto maybe<T>::unwrap() const& -> T const& ;
+  auto maybe<T>::unwrap() const& -> T const& ;
 
-auto maybe<T>::unwrap() && -> T&& ;
+  auto maybe<T>::unwrap() && -> T&& ;
+};
 ```
 
 Unwraps a maybe, yielding the content of an `just`.

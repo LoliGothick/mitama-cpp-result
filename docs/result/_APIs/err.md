@@ -1,4 +1,4 @@
-**result&lt;T, E&gt;::err() -> maybe&lt;E&gt;**
+**basic_result&lt;_, T, E&gt;::err() -> maybe&lt;E&gt;**
 
 ```cpp
 template <class T, class E>

@@ -1,7 +1,10 @@
-**is_nothing()**
+**maybe&lt;T&gt;::is_nothing() -> bool**
 
 ```cpp
-constexpr bool maybe<T>::is_nothing() const noexcept ;
+template <class T>
+class maybe {
+  constexpr bool maybe<T>::is_nothing() const noexcept ;
+};
 ```
 
 Returns `true` if the maybe has not same value.

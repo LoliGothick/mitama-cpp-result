@@ -1,16 +1,17 @@
 **maybe&lt;T&gt;::conj(maybe&lt;U&gt;) -> maybe&gt;U&gt;**
 
 ```cpp
-template <class U>
-auto maybe<T>::conj(maybe<U> const& rhs) -> maybe<U> ;
+template <class T>
+class maybe {
+  template <class U>
+  auto maybe<T>::conj(maybe<U> const& rhs) -> maybe<U> ;
+};
 ```
 
 Returns `nothing` if the `lhs` is `nothing`, otherwise returns `rhs`.
 
 **Example**
 
-```cpp
-```
 ```cpp
 // begin example
 #include <mitama/maybe/maybe.hpp>

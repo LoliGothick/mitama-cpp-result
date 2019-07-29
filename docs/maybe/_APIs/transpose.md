@@ -1,8 +1,11 @@
-**maybe&lt;basic_result&lt;_, T, E&gt;&gt;::transpose()**
+**maybe&lt;basic_result&lt;_, T, E&gt;&gt;::transpose() -> basic_result&lt;_, maybe&lt;T&gt;, E&gt;**
 
 ```cpp
-maybe<basic_result<_, T, E>>::transpose() const&
-  -> basic_result<_, maybe<T>, E> ;
+template <class T>
+class maybe {
+  maybe<basic_result<_, T, E>>::transpose() const&
+    -> basic_result<_, maybe<T>, E> ;
+};
 ```
 
 Transposes a `maybe` of a `result` into a `result` of a `maybe`.

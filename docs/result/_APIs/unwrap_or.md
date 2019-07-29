@@ -1,7 +1,10 @@
-**result&lt;, E&gt;::unwrap_or(T const& optb) -> T**
+**basic_result&lt;_, T, E&gt;::unwrap_or(T const& optb) -> T**
 
 ```cpp
-auto basic_result<_, T, E>::unwrap_or(T const& optb) const noexcept
+template <mutability _mu, class T, class E>
+class basic_result {
+  auto basic_result<_, T, E>::unwrap_or(T const& optb) const noexcept
+};
 ```
 
 Unwraps a result, yielding the content of an `success`. Else, it returns `optb`.
@@ -11,8 +14,18 @@ Arguments passed to unwrap_or are eagerly evaluated; if you are passing the resu
 **Example**
 
 ```cpp
-result<unsigned, unsigned> err = failure(2);
-result<unsigned, unsigned> ok = success(2);
-assert_eq(ok.unwrap_or(1u), 2u);
-assert_eq(err.unwrap_or(1u), 1u);
+// begin example
+#include <mitama/result/result.hpp>
+#include <cassert>
+#include <string>
+using namespace mitama;
+using namespace std::string_literals;
+
+int main() {
+  result<unsigned, unsigned> ok = success(2);
+  result<unsigned, unsigned> err = failure(2);
+  assert(ok.unwrap_or(1u) == 2u);
+  assert(err.unwrap_or(1u) == 1u);
+}
+// end example
 ```

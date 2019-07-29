@@ -1,4 +1,4 @@
-**or_peek(F f) -> maybe&lt;T&gt;**
+**basic_result::or_peek(F f) -> basic_result**
 
 
 ```cpp

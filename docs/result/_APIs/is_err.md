@@ -1,4 +1,4 @@
-**result&lt;T, E&gt;::is_err() -> bool**
+**basic_result&lt;_, T, E&gt;::is_err() -> bool**
 
 ```cpp
 template <mutability _mu, class T, class E>

@@ -1,4 +1,4 @@
-**result&lt;T, E&gt;::map_err(O op) -> result&lt;T, F&gt;**
+**basic_result&lt;_, T, E&gt;::map_err(O op) -> basic_result&lt;_, T, F&gt;**
 **where O: E -> F**
 
 ```cpp

@@ -1,7 +1,10 @@
 **maybe&lt;T&gt;::disj(maybe&lt;T&gt;) -> maybe&gt;T&gt;**
 
 ```cpp
-auto maybe<T>::disj(maybe<T> const& rhs) -> maybe<T> ;
+template <class T>
+class maybe {
+  auto maybe<T>::disj(maybe<T> const& rhs) -> maybe<T> ;
+};
 ```
 
 Returns the maybe if it contains a value, otherwise returns rhs.

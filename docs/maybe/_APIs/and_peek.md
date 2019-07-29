@@ -1,31 +1,34 @@
-**and_peek(F f) -> maybe&lt;T&gt;**
-
+**maybe&lt;T&gt;::and_peek(F f) -> maybe&lt;T&gt;**
+**where F: T -> void**
 
 ```cpp
-template <class F>
-constexpr
-std::enable_if_t<
+template <class T>
+class maybe {
+  template <class F>
+  constexpr
+  std::enable_if_t<
     std::disjunction_v<
-        std::is_invocable<F, T&>,
-        std::is_invocable<F>>,
-maybe&>
-and_peek(F&& f) & ;
+      std::is_invocable<F, T&>,
+      std::is_invocable<F>>,
+  maybe&>
+  and_peek(F&& f) & ;
 
-template <class F>
-std::enable_if_t<
+  template <class F>
+  std::enable_if_t<
     std::disjunction_v<
-        std::is_invocable<F, T const&>,
-        std::is_invocable<F>>,
-maybe const&>
-and_peek(F&& f) const& ;
+      std::is_invocable<F, T const&>,
+      std::is_invocable<F>>,
+  maybe const&>
+  and_peek(F&& f) const& ;
 
-template <class F>
-std::enable_if_t<
+  template <class F>
+  std::enable_if_t<
     std::disjunction_v<
-        std::is_invocable<F, T&&>,
-        std::is_invocable<F>>,
-maybe&&>
-and_peek(F&& f) && ;
+      std::is_invocable<F, T&&>,
+      std::is_invocable<F>>,
+  maybe&&>
+  and_peek(F&& f) && ;
+};
 ```
 
 Peeks the contained value if self is `just`, then returns self.

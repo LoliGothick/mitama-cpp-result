@@ -1,7 +1,10 @@
-**is_just()**
+**maybe&lt;T&gt;::is_just() -> bool**
 
 ```cpp
-constexpr bool maybe<T>::is_just() const noexcept ;
+template <class T>
+class maybe {
+  constexpr bool maybe<T>::is_just() const noexcept ;
+};
 ```
 
 Returns `true` if the maybe has same value.

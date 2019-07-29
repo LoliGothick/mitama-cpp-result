@@ -1,4 +1,4 @@
-**result&ltT, E&gt;::disj(result&ltT, F&gt; res) -> result&ltT, F&gt;**
+**basic_result&lt;_, T, E&gt;::disj(basic_result&lt;_, T, F&gt; res) -> basic_result&lt;_, T, F&gt;**
 
 ```cpp
 template <mutability _mu, class T, class E>

@@ -1,7 +1,11 @@
-**replace(Args... args) -> maybe&lt;T&gt;**
+**maybe&lt;T&gt;::replace(Args... args) -> maybe&lt;T&gt;**
+**where T is constructible from (Args...)**
 
 ```cpp
-maybe<T> replace(Args&&... args) & ;
+template <class T>
+class maybe {
+  maybe<T> replace(Args&&... args) & ;
+};
 ```
 
 Replaces the actual value in the maybe by expression `std::forward<Args>(args)...`, returning the old value if present, leaving a `just` value in its place without deinitializing either one.
