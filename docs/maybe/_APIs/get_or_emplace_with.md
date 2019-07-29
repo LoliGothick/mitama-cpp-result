@@ -15,11 +15,21 @@ Emplace constructs `T` into the maybe with expression `std::invoke(std::forward<
 **Example**
 
 ```cpp
-maybe<int> x = nothing;
-std::ignore = x.get_or_emplace_with([]{ return 5; });
-std::ignore = x.get_or_emplace_with([](auto x){ return x; }, 5);
-auto& y = x.get_or_emplace_with(&std::string::size , "12345"s);
-assert(y == 5);
-y = 7;
-assert(x == just(7));
+// begin example
+#include <mitama/maybe/maybe.hpp>
+#include <cassert>
+#include <string>
+using namespace mitama;
+using namespace std::string_literals;
+
+int main() {
+  maybe<int> x = nothing;
+  std::ignore = x.get_or_emplace_with([]{ return 5; });
+  std::ignore = x.get_or_emplace_with([](auto x){ return x; }, 5);
+  auto& y = x.get_or_emplace_with(&std::string::size , "12345"s);
+  assert(y == 5);
+  y = 7;
+  assert(x == just(7));
+}
+// end example
 ```

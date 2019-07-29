@@ -34,12 +34,19 @@ Applies a function to the contained value (if any), or computes a default (if no
 **Examples**
 
 ```cpp
-int k = 21;
+// begin example
+#include <mitama/maybe/maybe.hpp>
+#include <cassert>
+#include <string>
+using namespace mitama;
+using namespace std::string_literals;
 
-maybe x = just("foo"s);
-assert(x.map_or_else([k]{ return 2 * k; }, &std::string::size) == 3);
-
-maybe<std::string> y = nothing;
-assert(y.map_or_else([k]{ return 2 * k; }, &std::string::size) == 42);
+int main() {
+  int k = 21;
+  maybe x = just("foo"s);
+  assert(x.map_or_else([k]{ return 2 * k; }, &std::string::size) == 3);
+  maybe<std::string> y = nothing;
+  assert(y.map_or_else([k]{ return 2 * k; }, &std::string::size) == 42);
+}
+// end example
 ```
-

@@ -22,10 +22,20 @@ Maps an `maybe<T>` to `maybe<U>` by applying a function to a contained value.
 **Example**
 
 ```cpp
-maybe maybe_some_string = just("Hello, World!"s);
-// `maybe::map` takes self *by ref*,
-// *not* consuming `maybe_some_string`
-maybe maybe_some_len = maybe_some_string.map(&std::string::size);
+// begin example
+#include <mitama/maybe/maybe.hpp>
+#include <cassert>
+#include <string>
+using namespace mitama;
+using namespace std::string_literals;
 
-assert(maybe_some_len == just(13u));
+int main() {
+  maybe maybe_some_string = just("Hello, World!"s);
+  // `maybe::map` takes self *by ref*,
+  // *not* consuming `maybe_some_string`
+  maybe maybe_some_len = maybe_some_string.map(&std::string::size);
+
+  assert(maybe_some_len == just(13u));
+}
+// end example
 ```

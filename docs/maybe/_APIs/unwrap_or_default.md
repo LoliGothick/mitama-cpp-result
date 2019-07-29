@@ -1,13 +1,12 @@
 **unwrap_or_default()**
 
 ```cpp
-auto basic_result<_, T, E>::unwrap_or_default() const &
-  -> T ;
+auto maybe<T>::unwrap_or_default() const & -> std::remove_reference_t<T> ;
 ```
 
 Returns the contained value or a default.
 
-If `success`, returns the contained value, otherwise if `failure`, returns the default value for that type.
+If `just`, returns the contained value, otherwise if `nothing`, returns the default value for that type.
 
 **Remarks**
 
@@ -16,11 +15,17 @@ This operator shall be defined as deleted unless `is_default_constructible_v<T>`
 **Example**
 
 ```cpp
-auto good_year_from_input = "1909"s;
-auto bad_year_from_input = "190blarg"s;
-auto good_year = parse<int>(good_year_from_input).unwrap_or_default();
-auto bad_year = parse<int>(bad_year_from_input).unwrap_or_default();
-assert_eq(1909, good_year);
-assert_eq(0, bad_year);   * 
+// begin example
+#include <mitama/maybe/maybe.hpp>
+#include <cassert>
+#include <string>
+using namespace mitama;
+using namespace std::string_literals;
+
+int main() {
+  maybe<std::string> x = nothing;
+  assert(x.unwrap_or_default() == ""s);
+}
+// end example
 ```
 

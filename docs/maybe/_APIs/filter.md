@@ -28,10 +28,17 @@ Returns `nothing` if the option is `nothing`, otherwise calls predicate with the
 **Example**
 
 ```cpp
-auto is_even = [](int n) -> bool { return n % 2 == 0; };
+// begin example
+#include <mitama/maybe/maybe.hpp>
+#include <cassert>
+using namespace mitama;
 
-assert(maybe<int>{}.filter(is_even) == nothing);
-assert(maybe{just(3)}.filter(is_even) == nothing);
-assert(maybe{just(4)}.filter(is_even) == just(4));
+int main() {
+  auto is_even = [](int n) -> bool { return n % 2 == 0; };
+
+  assert(maybe<int>{}.filter(is_even) == nothing);
+  assert(maybe{just(3)}.filter(is_even) == nothing);
+  assert(maybe{just(4)}.filter(is_even) == just(4));
+}
+// end example
 ```
-

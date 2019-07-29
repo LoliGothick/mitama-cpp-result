@@ -10,16 +10,26 @@ Replaces the actual value in the maybe by expression `std::invoke(std::forward<F
 **Example**
 
 ```cpp
-{
+// begin example
+#include <mitama/maybe/maybe.hpp>
+#include <cassert>
+#include <string>
+using namespace mitama;
+using namespace std::string_literals;
+
+int main() {
+  {
     maybe x = just(2);
     auto old = x.replace_with([]{ return 5; });
-    REQUIRE(x == just(5));
-    REQUIRE(old == just(2));
-}
-{
+    assert(x == just(5));
+    assert(old == just(2));
+  }
+  {
     maybe<int> x = nothing;
     auto old = x.replace_with(&std::string::size, "foo"s);
-    REQUIRE(x == just(3));
-    REQUIRE(old == nothing);
+    assert(x == just(3));
+    assert(old == nothing);
+  }
 }
+// end example
 ```

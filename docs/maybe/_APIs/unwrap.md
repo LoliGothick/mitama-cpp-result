@@ -17,15 +17,25 @@ Raise `mitama::runtime_panic` if a maybe has not `just` value.
 **Example**
 
 ```cpp
-{
-  maybe x = just("air"s);
-  assert(x.unwrap() == "air"s);
+// begin example
+#include <mitama/maybe/maybe.hpp>
+#include <cassert>
+#include <string>
+using namespace mitama;
+using namespace std::string_literals;
+
+int main() {
+  {
+    maybe x = just("air"s);
+    assert(x.unwrap() == "air"s);
+  }
+  try {
+    maybe<int> x = nothing;
+    x.unwrap(); // raise an exception
+  }
+  catch ( mitama::runtime_panic const& panic ) {
+    std::cerr << panic.what() << std::endl; // runtime panicked at 'called `maybe::unwrap()` on a `nothing` value'
+  }
 }
-try {
-  maybe<int> x = nothing;
-  x.unwrap(); // raise an exception
-}
-catch ( mitama::runtime_panic cosnt & panic ) {
-  std::err << panic.what() << std::endl; // runtime panicked at 'called `maybe::unwrap()` on a `nothing` value'
-}
+// end example
 ```

@@ -19,12 +19,21 @@ Arguments passed to ok_or are eagerly evaluated; if you are passing the result o
 **Example**
 
 ```cpp
-maybe x = just("foo"s);
-assert(x.ok_or(0) == success("foo"s));
+// begin example
+#include <mitama/maybe/maybe.hpp>
+#include <mitama/result/result.hpp>
+#include <cassert>
+#include <string>
+using namespace mitama;
+using namespace std::string_literals;
 
-maybe<std::string> y = nothing;
-assert(y.ok_or(0) == failure(0));
+int main() {
+  maybe x = just("foo"s);
+  assert(x.ok_or(0) == success("foo"s));
 
-assert(y.ok_or() == failure<>());
+  maybe<std::string> y = nothing;
+  assert(y.ok_or(0) == failure(0));
+  assert(y.ok_or() == failure<>());
+}
+// end example
 ```
-

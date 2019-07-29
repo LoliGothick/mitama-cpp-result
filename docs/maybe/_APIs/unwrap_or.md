@@ -28,6 +28,17 @@ Arguments passed to `unwrap_or` are eagerly evaluated; if you are passing the re
 **Example**
 
 ```cpp
-assert(maybe{just("car"s)}.unwrap_or("bike"s) == "car"s);
-assert(maybe<std::string>{nothing}.unwrap_or("bike"s) == "bike"s);
+// begin example
+#include <mitama/maybe/maybe.hpp>
+#include <cassert>
+#include <string>
+using namespace mitama;
+using namespace std::string_literals;
+
+int main() {
+  assert(maybe{just("car"s)}.unwrap_or("bike"s) == "car"s);
+  assert(maybe<std::string>{nothing}.unwrap_or("bike"s) == "bike"s);
+}
+// end example
 ```
+

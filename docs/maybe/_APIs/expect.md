@@ -17,9 +17,6 @@ Raise `mitama::runtime_panic` if the value is a `nothing` with a custom panic me
 **Example**
 
 ```cpp
-```
-
-```cpp
 // begin example
 #include <mitama/maybe/maybe.hpp>
 #include <cassert>

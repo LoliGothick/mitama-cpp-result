@@ -13,7 +13,18 @@ Transposes a `maybe` of a `result` into a `result` of a `maybe`.
 **Example**
 
 ```cpp
-result<maybe<int>, std::string> x = success(just(5));
-maybe<result<int, std::string>> y = just(success(5));
-REQUIRE(x == y.transpose());
+// begin example
+#include <mitama/maybe/maybe.hpp>
+#include <mitama/result/result.hpp>
+#include <cassert>
+#include <string>
+using namespace mitama;
+using namespace std::string_literals;
+
+int main() {
+  result<maybe<int>, std::string> x = success(just(5));
+  maybe<result<int, std::string>> y = just(success(5));
+  assert(x == y.transpose());
+}
+// end example
 ```

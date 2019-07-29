@@ -31,10 +31,20 @@ Returns the maybe if it contains a value, otherwise calls `f` and returns the re
 **Example**
 
 ```cpp
-auto nobody = []() -> maybe<std::string> { return nothing; };
-auto vikings = []() -> maybe<std::string> { return just("vikings"s); };
+// begin example
+#include <mitama/maybe/maybe.hpp>
+#include <cassert>
+#include <string>
+using namespace mitama;
+using namespace std::string_literals;
 
-assert(maybe{just("barbarians"s)}.or_else(vikings) == just("barbarians"s));
-assert(maybe<std::string>{}.or_else(vikings) == just("vikings"s));
-assert(maybe<std::string>{}.or_else(nobody) == nothing);
+int main() {
+  auto nobody = []() -> maybe<std::string> { return nothing; };
+  auto vikings = []() -> maybe<std::string> { return just("vikings"s); };
+
+  assert(maybe{just("barbarians"s)}.or_else(vikings) == just("barbarians"s));
+  assert(maybe<std::string>{}.or_else(vikings) == just("vikings"s));
+  assert(maybe<std::string>{}.or_else(nobody) == nothing);
+}
+// end example
 ```

@@ -19,9 +19,20 @@ Transforms the `maybe<T>` into a `result<T, E>`, mapping `just(v)` to `success(v
 **Example**
 
 ```cpp
-maybe x = just("foo"s);
-assert(x.ok_or_else([]{ return 0; }) == success("foo"s));
+// begin example
+#include <mitama/maybe/maybe.hpp>
+#include <mitama/result/result.hpp>
+#include <cassert>
+#include <string>
+using namespace mitama;
+using namespace std::string_literals;
 
-maybe<std::string> y = nothing;
-assert(y.ok_or_else([]{ return 0; }) == failure(0));
+int main() {
+  maybe x = just("foo"s);
+  assert(x.ok_or_else([]{ return 0; }) == success("foo"s));
+
+  maybe<std::string> y = nothing;
+  assert(y.ok_or_else([]{ return 0; }) == failure(0));
+}
+// end example
 ```

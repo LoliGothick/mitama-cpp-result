@@ -29,8 +29,16 @@ Invokes the provided function and then return self (if nothing), or return self 
 **Example**
 
 ```cpp
-maybe x = nothing;
-int hook = 0;
-assert(x.or_peek([&hook]{ hook = 42; }) == nothing);
-assert(hook == 42);
+// begin example
+#include <mitama/maybe/maybe.hpp>
+#include <cassert>
+using namespace mitama;
+
+int main() {
+  maybe x = nothing;
+  int hook = 0;
+  assert(x.or_peek([&hook]{ hook = 42; }) == nothing);
+  assert(hook == 42);
+}
+// end example
 ```

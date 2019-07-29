@@ -9,9 +9,17 @@ Returns `true` if the maybe has not same value.
 **Example**
 
 ```cpp
-maybe<int> x = just(2);
-assert( ! x.is_nothing() );
+// begin example
+#include <mitama/maybe/maybe.hpp>
+#include <cassert>
+using namespace mitama;
 
-maybe<int> y = nothing;
-assert( y.is_nothing() );
+int main() {
+  maybe<int> x = just(2);
+  assert( ! x.is_nothing() );
+
+  maybe<int> y = nothing;
+  assert( y.is_nothing() );
+}
+// end example
 ```

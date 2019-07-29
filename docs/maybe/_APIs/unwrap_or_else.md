@@ -31,8 +31,15 @@ Returns the contained value or computes it from a invocable object `op`.
 **Example**
 
 ```cpp
-int k = 10;
-assert(maybe{just(4)}.unwrap_or_else([k]{ return 2 * k; }) == 4);
-assert(maybe<int>{}.unwrap_or_else([k]{ return 2 * k; }) == 20);
-```
+// begin example
+#include <mitama/maybe/maybe.hpp>
+#include <cassert>
+using namespace mitama;
 
+int main() {
+  int k = 10;
+  assert(maybe{just(4)}.unwrap_or_else([k]{ return 2 * k; }) == 4);
+  assert(maybe<int>{}.unwrap_or_else([k]{ return 2 * k; }) == 20);
+}
+// end example
+```

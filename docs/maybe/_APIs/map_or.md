@@ -31,9 +31,18 @@ Applies a function to the contained value (if any), or returns the provided defa
 **Example**
 
 ```cpp
-maybe x = just("foo"s);
-assert(x.map_or(42, &std::string::size) == 3);
+// begin example
+#include <mitama/maybe/maybe.hpp>
+#include <cassert>
+#include <string>
+using namespace mitama;
+using namespace std::string_literals;
 
-maybe<std::string> y = nothing;
-assert(y.map_or(42, &std::string::size) == 42);
+int main() {
+  maybe x = just("foo"s);
+  assert(x.map_or(42, &std::string::size) == 3);
+  maybe<std::string> y = nothing;
+  assert(y.map_or(42, &std::string::size) == 42);
+}
+// end example
 ```
