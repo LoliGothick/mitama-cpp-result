@@ -2,9 +2,12 @@
 **where O: E -> result&lt;T, F&gt;**
 
 ```cpp
-template <class O>
-constexpr auto basic_result<_, T, E>::or_else(O && op) const &
-  -> std::invoke_result<O&&, E> ;
+template <mutability _mu, class T, class E>
+class basic_result {
+  template <class O>
+  constexpr auto basic_result<_, T, E>::or_else(O && op) const &
+    -> std::invoke_result<O&&, E> ;
+};
 ```
 
 Calls `op` if the result is `failure`, otherwise returns the `success` value of self.
@@ -18,10 +21,24 @@ This constructor shall not participate in overload resolution unless `is_result_
 **Example**
 
 ```cpp
-auto sq = [](unsigned x) -> result<unsigned, unsigned> { return success(x * x); };
-auto err = [](unsigned x) -> result<unsigned, unsigned> { return failure(x); };
-assert_eq(success(2).or_else(sq).or_else(sq), success(2u));
-assert_eq(success(2).or_else(err).or_else(sq), success(2u));
-assert_eq(failure(3).or_else(sq).or_else(err), success(9u));
-assert_eq(failure(3).or_else(err).or_else(err), failure(3u));
+// begin example
+#include <mitama/result/result.hpp>
+#include <cassert>
+#include <string>
+using namespace mitama;
+using namespace std::string_literals;
+
+int main() {
+  auto sq = [](unsigned x) -> result<unsigned, unsigned> { return success(x * x); };
+  auto err = [](unsigned x) -> result<unsigned, unsigned> { return failure(x); };
+
+  result<int, int> x = success(2u);
+  result<int, int> y = failure(3u);
+
+  assert(x.or_else(sq).or_else(sq) == success(2u));
+  assert(x.or_else(err).or_else(sq) == success(2u));
+  assert(y.or_else(sq).or_else(err) == success(9u));
+  assert(y.or_else(err).or_else(err) == failure(3u));
+}
+// end example
 ```

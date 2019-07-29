@@ -2,8 +2,11 @@
 **where O: T -> U**
 
 ```cpp
-constexpr auto basic_result<_, T, E>::map(O && op)const &
+template <mutability _mu, class T, class E>
+class basic_result {
+constexpr auto map(O && op)const &
   -> std::enable_if_t<std::is_invocable_v<O, T>, result<std::invoke_result_t<O, T>, E>> ;
+};
 ```
 
 Maps a `result<T, E>` to `result<U, E>` by applying a function to a contained `success` value, leaving an `failure` value untouched.
@@ -13,12 +16,21 @@ This function can be used to compose the results of two functions.
 **Example**
 
 ```cpp
-std::string line = "1,3,5,7";
-for (auto num : split(line, ","))
-{
-  if (auto res = parse<int>(num).map(_1 * 2); res.is_ok())
-  {
-    assert_true(res.ok().value() % 2 == 0);
-  }
+// begin example
+#include <mitama/result/result.hpp>
+#include <cassert>
+#include <string>
+#include <boost/lambda/lambda.hpp>
+using namespace mitama;
+using namespace std::string_literals;
+using boost::lambda::_1;
+
+int main() {
+  result<int, int> ok = success(2);
+  assert(ok.map(_1 * 2) == success(4));
+
+  result<int, int> err = failure(2);
+  assert(ok.map(_1 * 2) == failure(2));
 }
+// end example
 ```
