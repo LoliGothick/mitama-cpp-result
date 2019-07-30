@@ -13,9 +13,7 @@ class maybe;
 
 ## Concepts
 
-`maybe<T>` is a class that holds a value type `T` or nothing.
-`maybe<T>` holds a value as `boost::optional<T>`.
-Therefore, `T` must satisfy the following requirements for bounded types:
+`T` must satisfy the following requirements:
 
 - Complete type
 
