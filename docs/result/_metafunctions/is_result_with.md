@@ -1,4 +1,4 @@
-### is_result_with
+## is_result_with
 
 ```cpp
 template <class, class...>

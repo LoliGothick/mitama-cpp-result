@@ -1,4 +1,4 @@
-### is_result
+## is_result
 
 ```cpp
 template <class>

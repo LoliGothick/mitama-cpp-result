@@ -60,6 +60,7 @@ nav:
     - Special Members: maybe/special_members.md
     - API Reference: maybe/APIs.md
     - Comparisons: maybe/comparisons.md # TODO
+    - Meta Functions: maybe/metafunctions.md
     - "": maybe/_Internal/comparisons.md
     - "": maybe/_APIs/is_just.md
     - "": maybe/_APIs/is_nothing.md
