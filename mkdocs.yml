@@ -59,7 +59,8 @@ nav:
     - Maybe 101: maybe/intro.md
     - Special Members: maybe/special_members.md
     - API Reference: maybe/APIs.md
-    - "": maybe/comparisons.md # TODO
+    - Comparisons: maybe/comparisons.md # TODO
+    - "": maybe/_Internal/comparisons.md
     - "": maybe/_APIs/is_just.md
     - "": maybe/_APIs/is_nothing.md
     - "": maybe/_APIs/as_ref.md
