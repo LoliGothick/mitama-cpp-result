@@ -113,3 +113,7 @@
 ## or_peek
 
 {!maybe/_APIs/or_peek.md!}
+
+## range_to_maybe
+
+{!maybe/_APIs/range_to_maybe.md!}
