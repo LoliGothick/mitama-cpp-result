@@ -96,8 +96,8 @@ nav:
     - Special Members: result/special_members.md
     - APIs: result/APIs.md
     - Meta Functions: result/metafunctions.md
+    - Comparisons: result/comparisons.md
     - CHANGELOG: result/_APIs/README.md
-    - "": result/comparisons.md # TODO
     - "": result/_APIs/is_ok.md
     - "": result/_APIs/is_err.md
     - "": result/_APIs/ok.md

@@ -5,6 +5,7 @@
 
 ## Prerequisites and installation
 
+### Prerequisites
 
 | Compiler/Toolchain |                       Status                       |
 | :----------------: | :------------------------------------------------: |
@@ -12,7 +13,7 @@
 |    gcc >= 8.3.0    | Testing on CircleCI; tested on each push to GitHub |
 |  boost >= 1.67.0   | Testing on CircleCI; tested on each push to GitHub |
 
-More specifically, Mitama.result requires a compiler/standard library supporting the following C++17 features:
+More specifically, `Mitama.Result` requires a compiler/standard library supporting the following C++17 features:
 
 - constexpr if
 - constexpr lambda
@@ -24,10 +25,21 @@ More specifically, Mitama.result requires a compiler/standard library supporting
 - `std::string_view` from the `<string_view>` header
 - `std::monostate` from the `<variant>` header
 
-Mitama.result requires a Boost supporting the following libraries:
+And requires a Boost supporting the following libraries:
 
 - `boost::format` from the `<boost/format.hpp>` header
 - `boost::hana::{fix, overload, overload_linearly}` from the `<boost/hana/functional/{fix, overload, overload_linearly}.hpp>` header
+
+### Installation
+
+- First, cloning mitama-cpp-result repository.
+
+```shell
+$ git clone https://github.com/LoliGothick/mitama-cpp-result.git
+```
+
+- Second, add `path/to/mitama-cpp/include` to include path.
+
 
 ## Basic Usage
 
@@ -64,10 +76,7 @@ auto func(int a) -> mitama::result<int, std::string> {
   return mitama::success(42);
 }
 // ...
-int value func(42).unwrap();
-// even if fail to unwrap,
-// raise an exception
-// and you get reason for the error.
+int value = func(42).unwrap();
 ```
 
-Even if this program fails to assert, you can get the reason for the error.
+Even if this program fail to assert, you can get the reason for the error.
