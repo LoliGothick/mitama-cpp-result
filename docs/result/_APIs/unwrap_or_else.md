@@ -9,7 +9,7 @@ class basic_result {
 };
 ```
 
-Unwraps a result, yielding the content of an `success`. If the value is an `failure` then it calls `op` with its value.
+Unwraps a result, yielding the content of an `success`. If the value is an `failure` then it invokes `op` with its value.
 
 **Example**
 

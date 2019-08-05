@@ -8,7 +8,7 @@ class maybe {
 };
 ```
 
-Maps an `maybe<T&>` to an `maybe<T>` by deep copying the contents of the maybe.
+Maps a `maybe<T&>` to a `maybe<T>` by deep copying the contents of the maybe.
 
 **Example**
 

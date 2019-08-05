@@ -33,7 +33,7 @@ class maybe {
 
 Peeks the contained value if self is `just`, then returns self.
 
-Invokes the provided function with the contained value and then return self (if any), or return self without doing anything (if not).
+Invokes the provided function with the contained value and then returns self (if any), or returns self without doing anything (if not).
 
 **Example**
 

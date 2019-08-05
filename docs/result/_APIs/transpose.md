@@ -11,7 +11,7 @@ class basic_result {
 };
 ```
 
-Transposes a `result` of an `maybe` into an `maybe` of a `result`.
+Transposes a `result` of a `maybe` into a `maybe` of a `result`.
 
 
 `success(nothing)` will be mapped to `nothing`.

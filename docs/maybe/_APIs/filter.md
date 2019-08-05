@@ -23,7 +23,7 @@ class maybe {
 };
 ```
 
-Returns `nothing` if the option is `nothing`, otherwise calls predicate with the wrapped value and returns:
+Returns `nothing` if the option is `nothing`, otherwise invokes predicate with the wrapped value and returns:
 
 - `just(t)` if predicate returns true (where t is the wrapped value), and
 - `nothing` if predicate returns false.

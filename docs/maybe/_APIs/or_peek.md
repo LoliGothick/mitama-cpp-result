@@ -27,7 +27,7 @@ or_peek(F&& f) && ;
 };
 ```
 
-Invokes the provided function and then return self (if nothing), or return self without doing anything (if any).
+Invokes the provided function and then returns self (if nothing), or returns self without doing anything (if any).
 
 **Example**
 

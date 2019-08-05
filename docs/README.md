@@ -1,6 +1,6 @@
 # Introduction
 
-result is a header only C++17 library for error handling.
+`Mitama.Result` is a header only C++17 library for error handling.
 
 
 ## Prerequisites and installation
@@ -26,16 +26,12 @@ More specifically, Mitama.result requires a compiler/standard library supporting
 
 Mitama.result requires a Boost supporting the following libraries:
 
-- `boost::optional` from the `<boost/optional.hpp>` header
-- `boost::variant` from the `<boost/variant.hpp>` header
 - `boost::format` from the `<boost/format.hpp>` header
 - `boost::hana::{fix, overload, overload_linearly}` from the `<boost/hana/functional/{fix, overload, overload_linearly}.hpp>` header
 
 ## Basic Usage
 
-Here is a bad code, see below.
-
-If this program fail to assert, you don't know the reason for the error.
+Here is a bad code.
 
 ```cpp
 bool func(int a) {
@@ -52,9 +48,9 @@ bool func(int a) {
 assert(func(42));
 ```
 
-Here is a code using result.
+If this program fail to assert, you don't know the reason for the error.
 
-Even if this program fail to assert, you can get the reason for the error.
+Rewrite this code using result.
 
 ```cpp
 auto func(int a) -> mitama::result<int, std::string> {
@@ -73,3 +69,5 @@ int value func(42).unwrap();
 // raise an exception
 // and you get reason for the error.
 ```
+
+Even if this program fails to assert, you can get the reason for the error.

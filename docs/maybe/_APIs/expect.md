@@ -11,7 +11,7 @@ class maybe {
 };
 ```
 
-Unwraps a maybe, yielding the content of an `just`.
+Unwraps a maybe, yielding the content of a `just`.
 
 **Exception**
 

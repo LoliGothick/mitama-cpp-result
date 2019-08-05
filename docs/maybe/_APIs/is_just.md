@@ -7,7 +7,7 @@ class maybe {
 };
 ```
 
-Returns `true` if the maybe has same value.
+Returns `true` if the maybe has some value.
 
 **Example**
 

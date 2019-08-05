@@ -30,7 +30,7 @@ class maybe {
 };
 ```
 
-Returns the maybe if it contains a value, otherwise calls `f` and returns the result.
+Returns the maybe if it contains a value, otherwise invokes `f` and returns the result.
 
 **Example**
 

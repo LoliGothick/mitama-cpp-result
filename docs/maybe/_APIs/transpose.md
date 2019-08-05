@@ -1,4 +1,4 @@
-**maybe&lt;basic_result&lt;_, T, E&gt;&gt;::transpose() -> basic_result&lt;_, maybe&lt;T&gt;, E&gt;**
+**maybe&lt;basic_result&lt;\_, T, E&gt;&gt;::transpose() -> basic_result&lt;\_, maybe&lt;T&gt;, E&gt;**
 
 ```cpp
 template <class T>

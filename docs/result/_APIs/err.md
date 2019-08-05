@@ -28,7 +28,7 @@ class basic_result<mutability::mut, T, E> {
 
 Converts from `basic_result` to `maybe`.
 
-Converts self into an `maybe`, and discarding the success value, if any.
+Converts self into a `maybe`, and discarding the success value, if any.
 
 Note that these functions propagate mutability to element type of `maybe`.
 

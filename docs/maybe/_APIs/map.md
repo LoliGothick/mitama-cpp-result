@@ -21,7 +21,7 @@ class maybe {
 };
 ```
 
-Maps an `maybe<T>` to `maybe<U>` by applying a function to a contained value.
+Maps a `maybe<T>` to `maybe<U>` by applying a function to a contained value.
 
 **Example**
 

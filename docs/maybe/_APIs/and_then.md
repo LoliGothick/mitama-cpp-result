@@ -30,7 +30,7 @@ class maybe {
 };
 ```
 
-Returns `nothing` if the option is `nothing`, otherwise calls `f` with the wrapped value and returns the result.
+Returns `nothing` if the option is `nothing`, otherwise invokes `f` with the wrapped value and returns the result.
 
 Some languages call this operation flatmap.
 
