@@ -3,7 +3,7 @@
 ```cpp
 template <class T>
 class maybe {
-  auto maybe<maybe<T>>::transpose() -> maybe<T> ;
+  auto maybe<maybe<T>>::flatten() -> maybe<T> ;
 };
 ```
 
