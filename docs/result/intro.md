@@ -59,6 +59,54 @@ Similarly, if you want to initialize `result<T, E>` with unsuccessful value of `
 result<int, std::string> res = failure("error"s);
 ```
 
-## Result of reference types
+## Result with reference types
 
-(In Progress...)
+### Using reference type for result
+
+```cpp
+// begin example
+#include <mitama/result/result.hpp>
+#include <string>
+#include <cassert>
+using namespace mitama;
+
+int main() {
+    int i = 1;
+    mut_result<int&, std::string&> res = success(i);
+    res.unwrap() = 2; // get reference to `i`, and assign `2`.
+
+    assert(i == 2);
+}
+// end example
+```
+
+### Using reference of imcomplete type
+
+```cpp
+// begin example
+#include <mitama/result/result.hpp>
+#include <string>
+#include <type_traits>
+#include <cassert>
+
+struct incomplete_type;
+incomplete_type& get_incomplete_type();
+template <class T, class=void> struct is_complete_type: std::false_type {};
+template <class T> struct is_complete_type<T, std::void_t<decltype(sizeof(T))>>: std::true_type {};
+
+using namespace mitama;
+
+int main() {
+  static_assert(!is_complete_type<incomplete_type>::value);
+  [[maybe_unused]]
+  result<incomplete_type&> res = success<incomplete_type&>(get_incomplete_type()); // use incomplete_type& for result
+}
+
+struct incomplete_type {};
+
+incomplete_type& get_incomplete_type() {
+  static incomplete_type obj = incomplete_type{};
+  return obj;
+}
+// end example
+```
