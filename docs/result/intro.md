@@ -61,7 +61,7 @@ result<int, std::string> res = failure("error"s);
 
 ## Result with reference types
 
-### Using reference type for result
+### Using reference type
 
 ```cpp
 // begin example
@@ -80,7 +80,7 @@ int main() {
 // end example
 ```
 
-### Using reference of imcomplete type
+### Using reference of imcomplete type [since v8.0.0]
 
 ```cpp
 // begin example

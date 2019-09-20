@@ -72,6 +72,7 @@ nav:
     - "": maybe/_APIs/map.md
     - "": maybe/_APIs/map_or.md
     - "": maybe/_APIs/map_or_else.md
+    - "": maybe/_APIs/map_anything_else.md
     - "": maybe/_APIs/ok_or.md
     - "": maybe/_APIs/ok_or_else.md
     - "": maybe/_APIs/conj.md

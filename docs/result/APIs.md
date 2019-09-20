@@ -16,6 +16,9 @@
 ## map_or_else
 {!result/_APIs/map_or_else.md!}
 
+## map_anything_else
+{!result/_APIs/map_anything_else.md!}
+
 ## map_err
 {!result/_APIs/map_err.md!}
 
