@@ -15,7 +15,7 @@ class maybe;
 
 `T` must satisfy the following requirements:
 
-- Complete type
+- Complete type (if `T` is not reference type) or Reference Type (possibly incomplete type)
 
 - Destructible
 
@@ -34,4 +34,3 @@ Similarly, if you want to initialize `maybe<T>` with none value, initialize with
 ```cpp
 mitama::maybe<int> nope_int = mitama::nothing;
 ```
-

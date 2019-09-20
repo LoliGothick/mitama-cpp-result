@@ -21,15 +21,10 @@ class basic_result;
 
 ## Concepts
 
-`basic_result<_, T, E>` is a class that holds either a success value type `T` or a failure value type `E`.
-`basic_result<_, T, E>` holds values like `boost::variant<T, E>`.
-Therefore, `T` and `E` must satisfy the following requirements for bounded types:
+Both of `T` and `E` must satisfy the following requirements:
 
-- CopyConstructible or MoveConstructible.
+- Complete type (if it is not reference type) or Reference Type (possibly incomplete type)
 - Destructor upholds the no-throw exception-safety guarantee.
-- Complete at the point of variant template instantiation.
-
-In more detail, see [the document](https://www.boost.org/doc/libs/1_70_0/doc/html/variant/reference.html#variant.concepts).
 
 ## result/mut_result the alias templates
 
