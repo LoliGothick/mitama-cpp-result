@@ -2,7 +2,6 @@ site_name: Mitama.Result User Manual
 site_dir: '../docs/'
 
 # Project information
-site_name: Mitama.Result | User Manual
 site_description: Mitama.Result C++17 Library
 site_author: mitama
 site_url: https://loligothick.github.io/mitama-cpp-result/
