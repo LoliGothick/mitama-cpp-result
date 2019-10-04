@@ -1,0 +1,5 @@
+markdown-include
+python-markdown-math
+fontawesome_markdown
+pygments
+mkdocs-material

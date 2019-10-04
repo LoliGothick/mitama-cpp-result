@@ -21,15 +21,10 @@ class basic_result;
 
 ## Concepts
 
-`basic_result<_, T, E>` is a class that holds either a success value type `T` or a failure value type `E`.
-`basic_result<_, T, E>` holds values like `boost::variant<T, E>`.
-Therefore, `T` and `E` must satisfy the following requirements for bounded types:
+Both of `T` and `E` must satisfy the following requirements:
 
-- CopyConstructible or MoveConstructible.
+- Complete type (if it is not reference type) or Reference Type (possibly incomplete type)
 - Destructor upholds the no-throw exception-safety guarantee.
-- Complete at the point of variant template instantiation.
-
-In more detail, see [the document](https://www.boost.org/doc/libs/1_70_0/doc/html/variant/reference.html#variant.concepts).
 
 ## result/mut_result the alias templates
 
@@ -59,6 +54,54 @@ Similarly, if you want to initialize `result<T, E>` with unsuccessful value of `
 result<int, std::string> res = failure("error"s);
 ```
 
-## Result of reference types
+## Result with reference types
 
-(In Progress...)
+### Using reference type
+
+```cpp
+// begin example
+#include <mitama/result/result.hpp>
+#include <string>
+#include <cassert>
+using namespace mitama;
+
+int main() {
+    int i = 1;
+    mut_result<int&, std::string&> res = success(i);
+    res.unwrap() = 2; // get reference to `i`, and assign `2`.
+
+    assert(i == 2);
+}
+// end example
+```
+
+### Using reference of imcomplete type [since v8.0.0]
+
+```cpp
+// begin example
+#include <mitama/result/result.hpp>
+#include <string>
+#include <type_traits>
+#include <cassert>
+
+struct incomplete_type;
+incomplete_type& get_incomplete_type();
+template <class T, class=void> struct is_complete_type: std::false_type {};
+template <class T> struct is_complete_type<T, std::void_t<decltype(sizeof(T))>>: std::true_type {};
+
+using namespace mitama;
+
+int main() {
+  static_assert(!is_complete_type<incomplete_type>::value);
+  [[maybe_unused]]
+  result<incomplete_type&> res = success<incomplete_type&>(get_incomplete_type()); // use incomplete_type& for result
+}
+
+struct incomplete_type {};
+
+incomplete_type& get_incomplete_type() {
+  static incomplete_type obj = incomplete_type{};
+  return obj;
+}
+// end example
+```
