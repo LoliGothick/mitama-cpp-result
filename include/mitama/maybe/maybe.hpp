@@ -9,7 +9,7 @@
 #include <mitama/result/traits/impl_traits.hpp>
 #include <mitama/maybe/fwd/maybe_fwd.hpp>
 #include <mitama/maybe/factory/just_nothing.hpp>
-#include <mitama/concepts/format.hpp>
+#include <mitama/concepts/display.hpp>
 
 #include <boost/format.hpp>
 #include <boost/hana/functional/fix.hpp>
@@ -25,24 +25,12 @@
 #include <utility>
 #include <string_view>
 #include <cassert>
+#include <concepts>
+#include <mitama/concepts/pointer_like.hpp>
 
 namespace mitama::mitamagic {
-template <class, class=void> struct is_pointer_like: std::false_type {};
-
-template <class PointerLike>
-struct is_pointer_like<PointerLike,
-    std::void_t<
-        decltype(std::declval<PointerLike&>().operator->()),
-        decltype(*std::declval<PointerLike&>()),
-        decltype(bool(std::declval<PointerLike&>()))>>
-    : std::true_type
-{};
-
-template <class, class=void>
-struct element_type;
-
-template <class T>
-struct element_type<T, std::enable_if_t<std::disjunction_v<is_pointer_like<T>, std::is_pointer<T>>>> {
+template <pointer_like T>
+struct element_type {
     using type = std::remove_reference_t<decltype(*std::declval<T>())>;
 };
 }
@@ -60,25 +48,6 @@ struct is_maybe_with: std::false_type {};
 
 template <class T>
 struct is_maybe_with<maybe<T>, T>: std::true_type {};
-
-template <class> class maybe_transpose_injector {
-public:
-    void transpose() = delete;
-};
-
-template <mutability _, class T, class E>
-class maybe_transpose_injector<maybe<basic_result<_, T, E>>>
-{
-public:
-    basic_result<_, maybe<T>, E>
-    transpose() const& {
-        return static_cast<maybe<basic_result<_, T, E>>const*>(this)->is_nothing()
-            ? basic_result<_, maybe<T>, E>{success{nothing}}
-            : static_cast<maybe<basic_result<_, T, E>>const*>(this)->unwrap().is_ok()
-                ? basic_result<_, maybe<T>, E>{in_place_ok, std::in_place, static_cast<maybe<basic_result<_, T, E>>const*>(this)->unwrap().unwrap()}
-                : basic_result<_, maybe<T>, E>{in_place_err, static_cast<maybe<basic_result<_, T, E>>const*>(this)->unwrap().unwrap_err()};
-    }
-};
 
 template <class T, class=void>
 class maybe_unwrap_or_default_injector {
@@ -181,8 +150,7 @@ public:
 
 template <class T>
 class maybe
-    : public maybe_transpose_injector<maybe<T>>
-    , public maybe_unwrap_or_default_injector<maybe<T>>
+    : public maybe_unwrap_or_default_injector<maybe<T>>
     , public maybe_flatten_injector<maybe<T>>
     , public maybe_cloned_injector<maybe<T>>
     , public maybe_replace_injector<maybe<T>>
@@ -203,23 +171,12 @@ class maybe
     maybe& operator=(maybe&&) = default;
     maybe(nothing_t): maybe() {}
 
-    template <typename U,
-        std::enable_if_t<
-            std::disjunction_v<
-                mitamagic::is_pointer_like<std::remove_reference_t<U>>,
-                std::is_pointer<std::remove_reference_t<U>>>,
-        bool> = false>
+    template <pointer_like U>
     maybe(U&& u) : storage_(std::in_place_type<nothing_t>) {
         if (u) storage_.template emplace<just_t<T>>(std::in_place, *std::forward<U>(u));
     }
 
-    template <typename U,
-        std::enable_if_t<
-            std::is_constructible_v<T, U&&> &&
-            !std::disjunction_v<
-                mitamagic::is_pointer_like<std::remove_reference_t<U>>,
-                std::is_pointer<std::remove_reference_t<U>>>,
-        bool> = false>
+    template <std::constructible_from<T> U> requires (!pointer_like<U>)
     maybe(U&& u) : storage_(std::in_place_type<just_t<T>>, std::in_place, std::forward<U>(u)) {}
 
     template <class... Args,
@@ -706,6 +663,15 @@ class maybe
             : std::invoke(std::forward<F>(f));
     }
 
+    auto transpose() const& requires (is_result_v<std::decay_t<T>>) {
+        using result_t = basic_result<std::decay_t<T>::mutability_v, maybe<typename std::decay_t<T>::ok_type>, typename std::decay_t<T>::err_type>;
+        return this->is_nothing()
+            ? result_t{success{nothing}}
+            : this->unwrap().is_ok()
+                ? result_t{in_place_ok, std::in_place, this->unwrap().unwrap()}
+                : result_t{in_place_err, this->unwrap().unwrap_err()};
+    }
+
     template <class F>
     std::enable_if_t<std::is_invocable_v<F&&, value_type&>>
     and_finally(F&& f) & {
@@ -839,9 +805,9 @@ class maybe
 
 };
 
-template <class T, std::enable_if_t<!std::disjunction_v<is_just<T>, mitamagic::is_pointer_like<T>>, bool> = false>
+template <class T> requires (!pointer_like<T> && !is_just<T>::value)
 maybe(T&&) -> maybe<T>;
-template <class T, std::enable_if_t<mitamagic::is_pointer_like<T>::value, bool> = false>
+template <pointer_like T>
 maybe(T&&) -> maybe<typename mitamagic::element_type<std::decay_t<T>>::type>;
 
 template <class T, class U>
@@ -1071,7 +1037,7 @@ operator>=(T&& lhs, maybe<U> const& rhs) {
 /// @brief
 ///   ostream output operator for maybe<T>
 ///
-/// @requires
+/// @constrains
 ///   Format<T>;
 ///
 /// @note

@@ -12,7 +12,7 @@
 #include <string_view>
 #include <type_traits>
 #include <utility>
-#include <mitama/concepts/format.hpp>
+#include <mitama/concepts/display.hpp>
 
 namespace mitama {
 /// class failure:
@@ -440,7 +440,7 @@ public:
   /// @brief
   ///   ostream output operator
   ///
-  /// @requires
+  /// @constrains
   ///   Format<T>;
   ///   Format<E>
   ///

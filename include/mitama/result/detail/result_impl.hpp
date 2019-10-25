@@ -121,7 +121,7 @@ public:
   /// @brief
   ///   Converts from basic_result<T, E> &` to basic_result<T::Target&, E&>.
   ///
-  /// @requires
+  /// @constrains
   ///   (T t) { *t }
   ///
   /// @note
@@ -140,7 +140,7 @@ public:
   /// @brief
   ///   Converts from basic_result<T, E> &` to basic_result<T&, E::Target&>.
   ///
-  /// @requires
+  /// @constrains
   ///   (E e) { *e }
   ///
   /// @note
@@ -159,7 +159,7 @@ public:
   /// @brief
   ///   Converts from basic_result<T, E> &` to basic_result<T::Target&, E::Target&>.
   ///
-  /// @requires
+  /// @constrains
   ///   (T t) { *t };
   ///   (E e) { *e }
   ///
@@ -180,7 +180,7 @@ public:
   /// @brief
   ///   Converts from basic_result<T, E> &` to basic_result<T::Target const&, E const&>.
   ///
-  /// @requires
+  /// @constrains
   ///   (T t) { *t }
   ///
   /// @note
@@ -199,7 +199,7 @@ public:
   /// @brief
   ///   Converts from basic_result<T, E> &` to basic_result<T const&, E::Target const&>.
   ///
-  /// @requires
+  /// @constrains
   ///   (E e) { *e }
   ///
   /// @note
@@ -218,7 +218,7 @@ public:
   /// @brief
   ///   Converts from basic_result<T, E> &` to basic_result<T::Target const&, E::Target const&>.
   ///
-  /// @requires
+  /// @constrains
   ///   (T t) { *t };
   ///   (E e) { *e }
   ///
@@ -239,7 +239,7 @@ public:
   /// @brief
   ///   Converts from basic_result<T, E> &` to basic_result<dangling<T::Target&>, dangling<E&>>.
   ///
-  /// @requires
+  /// @constrains
   ///   (T t) { *t }
   ///
   /// @note
@@ -261,7 +261,7 @@ public:
   /// @brief
   ///   Converts from basic_result<T, E> &` to basic_result<dangling<T&>, dangling<E::Target&>>.
   ///
-  /// @requires
+  /// @constrains
   ///   (E e) { *e }
   ///
   /// @note
@@ -283,7 +283,7 @@ public:
   /// @brief
   ///   Converts from basic_result<T, E> &` to basic_result<dangling<T::Target&>, dangling<E::Target&>>.
   ///
-  /// @requires
+  /// @constrains
   ///   (T t) { *t };
   ///   (E e) { *e }
   ///
@@ -328,7 +328,7 @@ public:
   /// @brief
   ///   Converts from basic_result<T, E> &` to basic_result<T::Target&, E&>.
   ///
-  /// @requires
+  /// @constrains
   ///   (T t) { *t }
   ///
   /// @note
@@ -351,7 +351,7 @@ public:
   /// @brief
   ///   Converts from basic_result<T, E> &` to basic_result<T::Target const&, E const&>.
   ///
-  /// @requires
+  /// @constrains
   ///   (T t) { *t }
   ///
   /// @note
@@ -374,7 +374,7 @@ public:
   /// @brief
   ///   Converts from basic_result<T, E> &` to basic_result<dangling<T::Target&>, dangling<E&>>.
   ///
-  /// @requires
+  /// @constrains
   ///   (T t) { *t }
   ///
   /// @note
@@ -421,7 +421,7 @@ public:
   /// @brief
   ///   Converts from basic_result<T, E> &` to basic_result<T&, E::Target&>.
   ///
-  /// @requires
+  /// @constrains
   ///   (E e) { *e }
   ///
   /// @note
@@ -444,7 +444,7 @@ public:
   /// @brief
   ///   Converts from basic_result<T, E> &` to basic_result<T const&, E::Target const&>.
   ///
-  /// @requires
+  /// @constrains
   ///   (E e) { *e }
   ///
   /// @note
@@ -467,7 +467,7 @@ public:
   /// @brief
   ///   Converts from basic_result<T, E> &` to basic_result<dangling<T&>, dangling<E::Target&>>.
   ///
-  /// @requires
+  /// @constrains
   ///   (E e) { *e }
   ///
   /// @note

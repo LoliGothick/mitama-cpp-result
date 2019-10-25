@@ -13,7 +13,7 @@
 #include <string_view>
 #include <type_traits>
 #include <utility>
-#include <mitama/concepts/format.hpp>
+#include <mitama/concepts/display.hpp>
 
 namespace mitama::_just_detail {
     template<class T=void>

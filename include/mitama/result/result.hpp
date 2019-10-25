@@ -18,42 +18,6 @@
 #include <utility>
 #include <string_view>
 
-namespace mitama {
-
-template <class>
-struct is_result : std::false_type {};
-template <mutability _mut, class T, class E>
-struct is_result<basic_result<_mut, T, E>> : std::true_type {};
-template <class T>
-inline constexpr bool is_result_v = is_result<T>::value;
-
-template <class, class...>
-struct is_convertible_result_with : std::false_type {};
-template <mutability _mut, class T, class E, class U>
-struct is_convertible_result_with<basic_result<_mut, T, E>, success<U>>: std::is_constructible<U, T> {};
-template <mutability _mut, class T, class E, class F>
-struct is_convertible_result_with<basic_result<_mut, T, E>, failure<F>>: std::is_constructible<F, E> {};
-template <mutability _mut, class T, class E, class U, class F>
-struct is_convertible_result_with<basic_result<_mut, T, E>, success<U>, failure<F>>
-  : std::conjunction<
-      std::is_constructible<U, T>,
-      std::is_constructible<F, E>>
-{};
-
-template <class T, class... Requires>
-inline constexpr bool is_convertible_result_with_v = is_convertible_result_with<meta::remove_cvr_t<T>, Requires...>::value;
-
-template <class>
-struct is_err_type : std::false_type {};
-template <class T>
-struct is_err_type<failure<T>> : std::true_type {};
-template <class>
-struct is_ok_type : std::false_type {};
-template <class T>
-struct is_ok_type<success<T>> : std::true_type {};
-
-} // !namespace mitama
-
 #include <mitama/result/detail/result_impl.hpp>
 
 namespace mitama {
@@ -96,6 +60,7 @@ public:
   using err_const_reference_type = meta::remove_cvr_t<E> const&;
   /// mutability
   static constexpr bool is_mut = !static_cast<bool>(_mutability);
+  static constexpr mutability mutability_v = _mutability;
 
   /* Constructors */
 
@@ -104,62 +69,31 @@ public:
 
   /// @brief
   ///   explicit copy construcor for convertible basic_result
-  template <mutability _mu, class U, class F,
-            where<std::is_constructible<T, U>,
-                  std::is_constructible<E, F>,
-                  std::disjunction<
-                    std::negation<std::is_convertible<F, E>>,
-                    std::negation<std::is_convertible<U, T>>
-                  >
-            > = required>
-  explicit constexpr basic_result(basic_result<_mu, U, F> const& res)
-    : storage_(res.storage_)
-  {}
-
-  /// @brief
-  ///   non-explicit copy construcor for convertible basic_result
-  template <mutability _mu, class U, class F,
-            where<std::is_constructible<T, U>,
-                  std::is_constructible<E, F>,
-                  std::is_convertible<U, T>,
-                  std::is_convertible<F, E>
-            > = required>
-  constexpr basic_result(basic_result<_mu, U, F> const& res)
+  template <mutability _mu, class U, class F>
+    requires std::constructible_from<T, U>
+          && std::constructible_from<E, F>
+  constexpr
+  explicit(!(std::convertible_to<U, T> && std::convertible_to<F, E>))
+  basic_result(basic_result<_mu, U, F> const& res)
     : storage_(res.storage_)
   {}
 
   /// @brief
   ///   explicit move construcor for convertible basic_result
-  template <mutability _mu, class U, class F,
-            where<std::is_constructible<T, U>,
-                  std::is_constructible<E, F>,
-                  std::disjunction<
-                    std::negation<std::is_convertible<F, E>>,
-                    std::negation<std::is_convertible<U, T>>
-                  >
-            > = required>
-  explicit constexpr basic_result(basic_result<_mu, U, F>&& res)
-    : storage_(std::move(res.storage_))
-  {}
-
-  /// @brief
-  ///   non-explicit copy construcor for convertible basic_result
-  template <mutability _mu, class U, class F,
-            where<std::is_constructible<T, U>,
-                  std::is_constructible<E, F>,
-                  std::is_convertible<U, T>,
-                  std::is_convertible<F, E>
-            > = required>
-  constexpr basic_result(basic_result<_mu, U, F>&& res)
+  template <mutability _mu, class U, class F>
+    requires std::constructible_from<T, U>
+          && std::constructible_from<E, F>
+  constexpr
+  explicit(!(std::convertible_to<U, T> && std::convertible_to<F, E>))
+  basic_result(basic_result<_mu, U, F>&& res)
     : storage_(std::move(res.storage_))
   {}
 
   /// @brief
   ///   copy assignment operator for convertible basic_result
-  template <mutability _mu, class U, class F,
-            where<std::is_constructible<T, U>,
-                  std::is_constructible<E, F>
-            > = required>
+  template <mutability _mu, class U, class F>
+    requires std::constructible_from<T, U>
+          && std::constructible_from<E, F>
   constexpr basic_result& operator=(basic_result<_mu, U, F> const& res)
   {
     static_assert(is_mut_v<_mutability>, "Error: assignment to immutable result");
@@ -172,10 +106,9 @@ public:
 
   /// @brief
   ///   move assignment operator for convertible basic_result
-  template <mutability _mu, class U, class F,
-            where<std::is_constructible<T, U>,
-                  std::is_constructible<E, F>
-            > = required>
+  template <mutability _mu, class U, class F>
+    requires std::constructible_from<T, U>
+          && std::constructible_from<E, F>
   constexpr basic_result& operator=(basic_result<_mu, U, F>&& res)
   {
     static_assert(is_mut_v<_mutability>, "Error: assignment to immutable result");
@@ -188,8 +121,7 @@ public:
 
   /// @brief
   ///   copy assignment operator for convertible success
-  template <class U,
-            where<std::is_constructible<T, U>> = required>
+  template <class U> requires std::constructible_from<T, U>
   constexpr basic_result& operator=(success<U> const& _ok)
   {
     static_assert(is_mut_v<_mutability>, "Error: assignment to immutable result");
@@ -199,8 +131,7 @@ public:
 
   /// @brief
   ///   copy assignment operator for convertible failure
-  template <class F,
-            where<std::is_constructible<E, F>> = required>
+  template <class F> requires std::constructible_from<E, F>
   constexpr basic_result& operator=(failure<F> const& _err)
   {
     static_assert(is_mut_v<_mutability>, "Error: assignment to immutable result");
@@ -210,8 +141,7 @@ public:
 
   /// @brief
   ///   move assignment operator for convertible success
-  template <class U,
-            where<std::is_constructible<T, U>> = required>
+  template <class U> requires std::constructible_from<T, U>
   constexpr basic_result& operator=(success<U>&& _ok)
   {
     static_assert(is_mut_v<_mutability>, "Error: assignment to immutable result");
@@ -221,8 +151,7 @@ public:
 
   /// @brief
   ///   move assignment operator for convertible failure
-  template <class F,
-            where<std::is_constructible<E, F>> = required>
+  template <class F> requires std::constructible_from<E, F>
   constexpr basic_result& operator=(failure<F>&& _err)
   {
     static_assert(is_mut_v<_mutability>, "Error: assignment to immutable result");
@@ -231,74 +160,34 @@ public:
   }
 
   /// @brief
-  ///   non-explicit constructor for successful lvalue
-  template <class U,
-            where<std::is_constructible<T, U>,
-                  std::is_convertible<U, T>> = required>
-  constexpr basic_result(success<U> const& ok)
-    : storage_{std::in_place_type<success<T>>, std::in_place, ok.get()}
-  {}
-
-  /// @brief
   ///   explicit constructor for successful lvalue
-  template <class U,
-            where<std::is_constructible<T, U>,
-                  std::negation<std::is_convertible<U, T>>> = required>
-  constexpr explicit basic_result(success<U> const& ok)
+  template <class U> requires std::constructible_from<T, U>
+  constexpr explicit(!std::convertible_to<U, T>)
+  basic_result(success<U> const& ok)
     : storage_{std::in_place_type<success<T>>, std::in_place, ok.get()}
-  {}
-
-  /// @brief
-  ///   non-explicit constructor for successful rvalue
-  template <class U,
-            where<std::is_constructible<T, U>,
-                  std::is_convertible<U, T>> = required>
-  constexpr basic_result(success<U> && ok)
-    : storage_{std::in_place_type<success<T>>, std::move(ok)}
   {}
 
   /// @brief
   ///   explicit constructor for successful rvalue
-  template <class U,
-            where<std::is_constructible<T, U>,
-                  std::negation<std::is_convertible<U, T>>> = required>
-  constexpr explicit basic_result(success<U> && ok)
+  template <class U> requires std::constructible_from<T, U>
+  constexpr /*explicit(!std::convertible_to<U, T>)*/
+  basic_result(success<U> && ok)
     : storage_{std::in_place_type<success<T>>, std::move(ok)}
   {}
 
   /// @brief
   ///   non-explicit constructor for unsuccessful lvalue
-  template <class U,
-            where<std::is_constructible<E, U>,
-                  std::is_convertible<U, E>> = required>
-  constexpr basic_result(failure<U> const& err)
-    : storage_{std::in_place_type<failure<E>>, std::in_place, err.get()}
-  {}
-
-  /// @brief
-  ///   explicit constructor for unsuccessful lvalue
-  template <class U,
-            where<std::is_constructible<T, U>,
-                  std::negation<std::is_convertible<U, T>>> = required>
-  constexpr explicit basic_result(failure<U> const& err)
+  template <class F> requires std::constructible_from<E, F>
+  constexpr explicit(!std::convertible_to<F, E>)
+  basic_result(failure<F> const& err)
     : storage_{std::in_place_type<failure<E>>, std::in_place, err.get()}
   {}
 
   /// @brief
   ///   non-explicit constructor for unsuccessful rvalue
-  template <class U,
-            where<std::is_constructible<E, U>,
-                  std::is_convertible<U, E>> = required>
-  constexpr basic_result(failure<U> && err)
-    : storage_{std::in_place_type<failure<E>>, std::move(err)}
-  {}
-
-  /// @brief
-  ///   explicit constructor for unsuccessful lvalue
-  template <class U,
-            where<std::is_constructible<T, U>,
-                  std::negation<std::is_convertible<U, T>>> = required>
-  constexpr explicit basic_result(failure<U> && err)
+  template <class F> requires std::constructible_from<E, F>
+  constexpr explicit(!std::convertible_to<F, E>)
+  basic_result(failure<F>&& err)
     : storage_{std::in_place_type<failure<E>>, std::move(err)}
   {}
 
@@ -377,7 +266,7 @@ public:
   ///   Converts self into a `maybe<const T>`, and discarding the failure, if any.
   constexpr
   maybe<std::remove_reference_t<ok_type>>
-  ok() const&  noexcept {
+  ok() const& noexcept {
     if (is_ok()) {
       return maybe<std::remove_reference_t<ok_type>>(std::in_place, unwrap());
     }
@@ -393,7 +282,7 @@ public:
   ///   Converts self into a `maybe<const E>`, and discarding the success, if any.
   constexpr
   maybe<std::remove_reference_t<err_type>>
-  err() const&  noexcept {
+  err() const& noexcept {
     if (is_err()) {
       return maybe<std::remove_reference_t<err_type>>(std::in_place, unwrap_err());
     }
@@ -404,8 +293,7 @@ public:
 
   /// @brief
   ///   Produces a new basic_result, containing a reference into the original, leaving the original in place.
-  constexpr auto as_ref() const&
-    noexcept
+  constexpr auto as_ref() const& noexcept
     -> basic_result<_mutability, meta::remove_cvr_t<T> const&, meta::remove_cvr_t<E> const&>
   {
     if ( is_ok() )
@@ -417,8 +305,7 @@ public:
   /// @brief
   ///   Converts from `basic_result<mutability::mut, T, E>&` to `basic_result<mutability::immut, T&, E&>`.
   constexpr
-  auto as_mut() &
-    noexcept
+  auto as_mut() & noexcept
     -> basic_result<mutability::immut, std::remove_reference_t<T>&, std::remove_reference_t<E>&>
   {
     static_assert(
@@ -441,7 +328,7 @@ public:
   ///   Maps a basic_result<T, E> to basic_result<U, E> by applying a function to a contained success value,
   ///   leaving an failure value untouched.
   ///
-  /// @requires
+  /// @constrains
   ///   { std::invoke(op, unwrap()) }
   ///
   /// @note
@@ -462,7 +349,7 @@ public:
   ///   Maps a basic_result<T, E> to basic_result<U, E> by applying a function to a contained success value,
   ///   leaving an failure value untouched.
   ///
-  /// @requires
+  /// @constrains
   ///   { std::invoke(op, unwrap()) }
   ///
   /// @note
@@ -483,7 +370,7 @@ public:
   ///   Maps a basic_result<T, E> to U by applying a function to a contained success value,
   ///   or a fallback function to a contained failure value.
   ///
-  /// @requires
+  /// @constrains
   ///   { std::invoke(_fallback, unwrap_err()) };
   ///   { std::invoke(_map, unwrap()) };
   ///   Common< decltype(std::invoke(_fallback, unwrap_err())), decltype(std::invoke(_map, unwrap())) >;
@@ -493,14 +380,9 @@ public:
   template <class Map, class Fallback>
   constexpr auto map_or_else(Fallback&& _fallback, Map&& _map) &
     noexcept(std::is_nothrow_invocable_v<Fallback, E> && std::is_nothrow_invocable_v<Map, T>)
-    -> std::enable_if_t<
-          std::conjunction_v<
-            std::is_invocable<Map, T&>,
-            std::is_invocable<Fallback, E&>,
-            std::is_convertible<std::invoke_result_t<Map, T&>, std::invoke_result_t<Fallback, E&>>,
-            std::is_convertible<std::invoke_result_t<Fallback, E&>, std::invoke_result_t<Map, T&>>
-          >,
-    std::common_type_t<std::invoke_result_t<Map, T>, std::invoke_result_t<Fallback, E>>>
+      requires std::invocable<Map, T&>
+            && std::invocable<Fallback, E&>
+            && std::common_with<std::invoke_result_t<Map, T&>, std::invoke_result_t<Fallback, E&>>
   {
     using result_type = std::common_type_t<std::invoke_result_t<Map, T>, std::invoke_result_t<Fallback, E>>;
     return is_ok()
@@ -512,7 +394,7 @@ public:
   ///   Maps a basic_result<T, E> to U by applying a function to a contained success value,
   ///   or a fallback function to a contained failure value.
   ///
-  /// @requires
+  /// @constrains
   ///   { std::invoke(_fallback, unwrap_err()) };
   ///   { std::invoke(_map, unwrap()) };
   ///   Common< decltype(std::invoke(_fallback, unwrap_err())), decltype(std::invoke(_map, unwrap())) >;
@@ -540,7 +422,7 @@ public:
   ///   Maps a basic_result<T, E> to U by applying a function to a contained success value,
   ///   or a fallback function to a contained failure value.
   ///
-  /// @requires
+  /// @constrains
   ///   { std::invoke(_fallback, unwrap_err()) };
   ///   { std::invoke(_map, unwrap()) };
   ///   Common< decltype(std::invoke(_fallback, unwrap_err())), decltype(std::invoke(_map, unwrap())) >;
@@ -568,7 +450,7 @@ public:
   ///   Maps a basic_result<T, E> to basic_result<T, F> by applying a function to a contained failure value,
   ///   leaving an success value untouched.
   ///
-  /// @requires
+  /// @constrains
   ///   { std::invoke(op, unwrap_err()) }
   ///
   /// @note
@@ -589,7 +471,7 @@ public:
   ///   Maps a basic_result<T, E> to basic_result<T, F> by applying a function to a contained failure value,
   ///   leaving an success value untouched.
   ///
-  /// @requires
+  /// @constrains
   ///   { std::invoke(op, unwrap_err()) }
   ///
   /// @note
@@ -609,7 +491,7 @@ public:
   /// @brief
   ///   Calls `op` if the result is success, otherwise; returns the failure value of self.
   ///
-  /// @requires
+  /// @constrains
   ///   requires requires is_convertible_result_with<std::invoke_result_t<O, T>, failure<F>>
   ///
   /// @note
@@ -629,7 +511,7 @@ public:
   /// @brief
   ///   Calls `op` if the result is success, otherwise; returns the failure value of self.
   ///
-  /// @requires
+  /// @constrains
   ///   requires requires is_convertible_result_with<std::invoke_result_t<O, T>, success<T>>
   ///
   /// @note
@@ -649,7 +531,7 @@ public:
   /// @brief
   ///   Calls `op` if the result is failure, otherwise; returns the success value of self.
   ///
-  /// @requires
+  /// @constrains
   ///   requires requires is_convertible_result_with<std::invoke_result_t<O, T>, success<T>>
   ///
   /// @note
@@ -669,7 +551,7 @@ public:
   /// @brief
   ///   Calls `op` if the result is failure, otherwise; returns the success value of self.
   ///
-  /// @requires
+  /// @constrains
   ///   { std::invoke(op, unwrap_err()) } -> ConvertibleTo<basic_result<T, U>>
   ///
   /// @note
@@ -742,7 +624,7 @@ public:
   ///   Unwraps a result, yielding the content of an success.
   ///   Else, it returns optb.
   ///
-  /// @requires
+  /// @constrains
   ///   { is_ok() ? unwrap() : optb }
   ///
   /// @note
@@ -762,7 +644,7 @@ public:
   ///   Unwraps a result, yielding the content of an success.
   ///   Else, it returns optb.
   ///
-  /// @requires
+  /// @constrains
   ///   { is_ok() ? unwrap() : optb }
   ///
   /// @note
@@ -780,7 +662,7 @@ public:
   /// @brief
   ///   Unwraps a result, yielding the content of an success.
   ///
-  /// @requires
+  /// @constrains
   ///   { std::invoke(op, unwrap_err()) } -> ConvertibleTo<T> ||
   ///   { std::invoke(op) } -> ConvertibleTo<T>
   ///
@@ -1153,7 +1035,7 @@ public:
   /// @brief
   ///   equal compare
   ///
-  /// @requires
+  /// @constrains
   ///   (T a, U b) { a == b } -> Same<bool>;
   ///   (E a, F b) { a == b } -> Same<bool>
   ///
@@ -1175,7 +1057,7 @@ public:
   /// @brief
   ///   not equal compare
   ///
-  /// @requires
+  /// @constrains
   ///   (T a, U b) { a == b } -> Same<bool>;
   ///   (E a, F b) { a == b } -> Same<bool>
   ///
@@ -1197,7 +1079,7 @@ public:
   /// @brief
   ///   equal compare
   ///
-  /// @requires
+  /// @constrains
   ///   (T a, U b) { a == b } -> Same<bool>
   ///
   /// @note
@@ -1213,7 +1095,7 @@ public:
   /// @brief
   ///   not equal compare
   ///
-  /// @requires
+  /// @constrains
   ///   (T a, U b) { a == b } -> Same<bool>
   ///
   /// @note
@@ -1229,7 +1111,7 @@ public:
   /// @brief
   ///   equal compare
   ///
-  /// @requires
+  /// @constrains
   ///   (E a, F b) { a == b } -> Same<bool>
   ///
   /// @note
@@ -1245,7 +1127,7 @@ public:
   /// @brief
   ///   not equal compare
   ///
-  /// @requires
+  /// @constrains
   ///   (E a, F b) { a == b } -> Same<bool>
   ///
   /// @note

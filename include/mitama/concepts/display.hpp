@@ -24,7 +24,7 @@ namespace mitama {
                         [](std::monostate) { return "()"s; },
                         [](std::string_view x) { return (boost::format("\"%1%\"") % x).str(); },
                         [](auto const& x) { return (boost::format("%1%") % x).str(); })
-                        (x);        
+                        (x);
                     },
                     [](auto _fmt, auto const& x) -> std::enable_if_t<trait::formattable_dictionary<std::decay_t<decltype(x)>>::value, std::string> {
                         if (x.empty()) return "{}"s;
