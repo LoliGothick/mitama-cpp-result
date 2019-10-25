@@ -329,19 +329,16 @@ public:
   ///   leaving an failure value untouched.
   ///
   /// @constrains
-  ///   { std::invoke(op, unwrap()) }
+  ///   op: std::regular_invocable<T&&>
   ///
   /// @note
   ///   This function can be used to compose the results of two functions.
-  template <class O>
-  constexpr auto map(O && op) const &
-    noexcept(std::is_nothrow_invocable_v<O, T>)
-    -> std::enable_if_t<std::is_invocable_v<O, T>,
-    basic_result<_mutability, std::invoke_result_t<O, T>, E>>
+  constexpr auto map(std::regular_invocable<T&> auto&& op) &
+    noexcept(std::is_nothrow_invocable_v<decltype(op), T&>)
   {
-    using result_type = basic_result<_mutability, std::invoke_result_t<O, T>, E>;
+    using result_type = basic_result<_mutability, std::invoke_result_t<decltype(op), T>, E>;
     return is_ok()
-               ? static_cast<result_type>(success{std::invoke(std::forward<O>(op), std::get<success<T>>(storage_).get())})
+               ? static_cast<result_type>(success{std::invoke(std::forward<decltype(op)>(op), std::get<success<T>>(storage_).get())})
                : static_cast<result_type>(failure{std::get<failure<E>>(storage_).get()});
   }
 
@@ -350,19 +347,34 @@ public:
   ///   leaving an failure value untouched.
   ///
   /// @constrains
-  ///   { std::invoke(op, unwrap()) }
+  ///   op: std::invocable<T&&>
   ///
   /// @note
   ///   This function can be used to compose the results of two functions.
-  template <class O>
-  constexpr auto map(O && op) &&
-    noexcept(std::is_nothrow_invocable_v<O, T>)
-    -> std::enable_if_t<std::is_invocable_v<O, T>,
-    basic_result<_mutability, std::invoke_result_t<O, T>, E>>
+  constexpr auto map(std::invocable<T const&> auto&& op) const&
+    noexcept(std::is_nothrow_invocable_v<decltype(op), T const&>)
   {
-    using result_type = basic_result<_mutability, std::invoke_result_t<O, T>, E>;
+    using result_type = basic_result<_mutability, std::invoke_result_t<decltype(op), T>, E>;
     return is_ok()
-               ? static_cast<result_type>(success{std::invoke(std::forward<O>(op), std::move(std::get<success<T>>(storage_).get()))})
+               ? static_cast<result_type>(success{std::invoke(std::forward<decltype(op)>(op), std::get<success<T>>(storage_).get())})
+               : static_cast<result_type>(failure{std::get<failure<E>>(storage_).get()});
+  }
+
+  /// @brief
+  ///   Maps a basic_result<T, E> to basic_result<U, E> by applying a function to a contained success value,
+  ///   leaving an failure value untouched.
+  ///
+  /// @constrains
+  ///   op: std::invocable<T&&>
+  ///
+  /// @note
+  ///   This function can be used to compose the results of two functions.
+  constexpr auto map(std::invocable<T&&> auto&& op) &&
+    noexcept(std::is_nothrow_invocable_v<decltype(op), T&&>)
+  {
+    using result_type = basic_result<_mutability, std::invoke_result_t<decltype(op), T>, E>;
+    return is_ok()
+               ? static_cast<result_type>(success{std::invoke(std::forward<decltype(op)>(op), std::move(std::get<success<T>>(storage_).get()))})
                : static_cast<result_type>(failure{std::move(std::get<failure<E>>(storage_).get())});
   }
 
@@ -371,23 +383,20 @@ public:
   ///   or a fallback function to a contained failure value.
   ///
   /// @constrains
-  ///   { std::invoke(_fallback, unwrap_err()) };
-  ///   { std::invoke(_map, unwrap()) };
-  ///   Common< decltype(std::invoke(_fallback, unwrap_err())), decltype(std::invoke(_map, unwrap())) >;
+  ///   _fallback: std::regular_invocable<E&>,
+  ///   map: std::regular_invocable<T&>,
+  ///   std::common_with<std::invoke_result_t<decltype(_fallback), E&>, std::invoke_result_t<decltype(_map), T&>>
   ///
   /// @note
   ///   This function can be used to unpack a successful result while handling an error.
-  template <class Map, class Fallback>
-  constexpr auto map_or_else(Fallback&& _fallback, Map&& _map) &
-    noexcept(std::is_nothrow_invocable_v<Fallback, E> && std::is_nothrow_invocable_v<Map, T>)
-      requires std::invocable<Map, T&>
-            && std::invocable<Fallback, E&>
-            && std::common_with<std::invoke_result_t<Map, T&>, std::invoke_result_t<Fallback, E&>>
+  constexpr auto map_or_else(std::regular_invocable<E&> auto&& _fallback, std::regular_invocable<T&> auto&& _map) &
+    noexcept(std::is_nothrow_invocable_v<decltype(_fallback), E&> && std::is_nothrow_invocable_v<decltype(_map), T&>)
+    requires std::common_with<std::invoke_result_t<decltype(_fallback), E&>, std::invoke_result_t<decltype(_map), T&>>
   {
-    using result_type = std::common_type_t<std::invoke_result_t<Map, T>, std::invoke_result_t<Fallback, E>>;
+    using result_type = std::common_type_t<std::invoke_result_t<decltype(_map), T>, std::invoke_result_t<decltype(_fallback), E>>;
     return is_ok()
-               ? static_cast<result_type>(std::invoke(std::forward<Map>(_map), std::get<success<T>>(storage_).get()))
-               : static_cast<result_type>(std::invoke(std::forward<Fallback>(_fallback), std::get<failure<E>>(storage_).get()));
+               ? static_cast<result_type>(std::invoke(std::forward<decltype(_map)>(_map), std::get<success<T>>(storage_).get()))
+               : static_cast<result_type>(std::invoke(std::forward<decltype(_fallback)>(_fallback), std::get<failure<E>>(storage_).get()));
   }
 
   /// @brief
@@ -395,27 +404,20 @@ public:
   ///   or a fallback function to a contained failure value.
   ///
   /// @constrains
-  ///   { std::invoke(_fallback, unwrap_err()) };
-  ///   { std::invoke(_map, unwrap()) };
-  ///   Common< decltype(std::invoke(_fallback, unwrap_err())), decltype(std::invoke(_map, unwrap())) >;
+  ///   _fallback: std::invocable<E&>,
+  ///   map: std::invocable<T&>,
+  ///   std::common_with<std::invoke_result_t<decltype(_fallback), E&>, std::invoke_result_t<decltype(_map), T&>>
   ///
   /// @note
   ///   This function can be used to unpack a successful result while handling an error.
-  template <class Map, class Fallback>
-  constexpr auto map_or_else(Fallback&& _fallback, Map&& _map) const&
-    noexcept(std::is_nothrow_invocable_v<Fallback, E> && std::is_nothrow_invocable_v<Map, T>)
-    -> std::enable_if_t<
-          std::conjunction_v<std::is_invocable<Map, T>,
-            std::is_invocable<Fallback, E>,
-            std::is_convertible<std::invoke_result_t<Map, T>, std::invoke_result_t<Fallback, E>>,
-            std::is_convertible<std::invoke_result_t<Fallback, E>, std::invoke_result_t<Map, T>>
-          >,
-    std::common_type_t<std::invoke_result_t<Map, T>, std::invoke_result_t<Fallback, E>>>
+  constexpr auto map_or_else(std::invocable<E const&> auto&& _fallback, std::invocable<T const&> auto&& _map) const&
+    noexcept(std::is_nothrow_invocable_v<decltype(_fallback), E const&> && std::is_nothrow_invocable_v<decltype(_map), T const&>)
+    requires std::common_with<std::invoke_result_t<decltype(_fallback), E const&>, std::invoke_result_t<decltype(_map), T const&>>
   {
-    using result_type = std::common_type_t<std::invoke_result_t<Map, T>, std::invoke_result_t<Fallback, E>>;
+    using result_type = std::common_type_t<std::invoke_result_t<decltype(_map), T>, std::invoke_result_t<decltype(_fallback), E>>;
     return is_ok()
-               ? static_cast<result_type>(std::invoke(std::forward<Map>(_map), std::get<success<T>>(storage_).get()))
-               : static_cast<result_type>(std::invoke(std::forward<Fallback>(_fallback), std::get<failure<E>>(storage_).get()));
+               ? static_cast<result_type>(std::invoke(std::forward<decltype(_map)>(_map), std::get<success<T>>(storage_).get()))
+               : static_cast<result_type>(std::invoke(std::forward<decltype(_fallback)>(_fallback), std::get<failure<E>>(storage_).get()));
   }
 
   /// @brief
@@ -423,27 +425,20 @@ public:
   ///   or a fallback function to a contained failure value.
   ///
   /// @constrains
-  ///   { std::invoke(_fallback, unwrap_err()) };
-  ///   { std::invoke(_map, unwrap()) };
-  ///   Common< decltype(std::invoke(_fallback, unwrap_err())), decltype(std::invoke(_map, unwrap())) >;
+  ///   _fallback: std::invocable<E&>,
+  ///   map: std::invocable<T&>,
+  ///   std::common_with<std::invoke_result_t<decltype(_fallback), E&>, std::invoke_result_t<decltype(_map), T&>>
   ///
   /// @note
   ///   This function can be used to unpack a successful result while handling an error.
-  template <class Map, class Fallback>
-  constexpr auto map_or_else(Fallback&& _fallback, Map&& _map) && 
-    noexcept(std::is_nothrow_invocable_v<Fallback, E> && std::is_nothrow_invocable_v<Map, T>)
-    -> std::enable_if_t<
-          std::conjunction_v<std::is_invocable<Map, T>,
-            std::is_invocable<Fallback, E>,
-            std::is_convertible<std::invoke_result_t<Map, T>, std::invoke_result_t<Fallback, E>>,
-            std::is_convertible<std::invoke_result_t<Fallback, E>, std::invoke_result_t<Map, T>>
-          >,
-    std::common_type_t<std::invoke_result_t<Map, T>, std::invoke_result_t<Fallback, E>>>
+  constexpr auto map_or_else(std::invocable<E&&> auto&& _fallback, std::invocable<T&&> auto&& _map) &&
+    noexcept(std::is_nothrow_invocable_v<decltype(_fallback), E&&> && std::is_nothrow_invocable_v<decltype(_map), T&&>)
+    requires std::common_with<std::invoke_result_t<decltype(_fallback), E&&>, std::invoke_result_t<decltype(_map), T&&>>
   {
-    using result_type = std::common_type_t<std::invoke_result_t<Map, T>, std::invoke_result_t<Fallback, E>>;
+    using result_type = std::common_type_t<std::invoke_result_t<decltype(_map), T>, std::invoke_result_t<decltype(_fallback), E>>;
     return is_ok()
-               ? static_cast<result_type>(std::invoke(std::forward<Map>(_map), std::move(std::get<success<T>>(storage_).get())))
-               : static_cast<result_type>(std::invoke(std::forward<Fallback>(_fallback), std::move(std::get<failure<E>>(storage_).get())));
+               ? static_cast<result_type>(std::invoke(std::forward<decltype(_map)>(_map), std::move(std::get<success<T>>(storage_).get())))
+               : static_cast<result_type>(std::invoke(std::forward<decltype(_fallback)>(_fallback), std::move(std::get<failure<E>>(storage_).get())));
   }
 
   /// @brief
@@ -451,19 +446,34 @@ public:
   ///   leaving an success value untouched.
   ///
   /// @constrains
-  ///   { std::invoke(op, unwrap_err()) }
+  ///   op: std::regular_invocable<E&>
   ///
   /// @note
   ///   This function can be used to pass through a successful result while handling an error.
-  template <class O>
-  constexpr auto map_err(O && op) const &
-    noexcept(std::is_nothrow_invocable_v<O, E>)
-    -> std::enable_if_t<std::is_invocable_v<O, E>,
-    basic_result<_mutability, T, std::invoke_result_t<O, E>>>
+  constexpr auto map_err(std::regular_invocable<E&> auto&& op) &
+    noexcept(std::is_nothrow_invocable_v<decltype(op), E>)
   {
-    using result_type = basic_result<_mutability, T, std::invoke_result_t<O, E>>;
+    using result_type = basic_result<_mutability, T, std::invoke_result_t<decltype(op), E>>;
     return is_err()
-               ? static_cast<result_type>(failure{std::invoke(std::forward<O>(op), std::get<failure<E>>(storage_).get())})
+               ? static_cast<result_type>(failure{std::invoke(std::forward<decltype(op)>(op), std::get<failure<E>>(storage_).get())})
+               : static_cast<result_type>(success{std::get<success<T>>(storage_).get()});
+  }
+
+  /// @brief
+  ///   Maps a basic_result<T, E> to basic_result<T, F> by applying a function to a contained failure value,
+  ///   leaving an success value untouched.
+  ///
+  /// @constrains
+  ///   op: std::invocable<E const&>
+  ///
+  /// @note
+  ///   This function can be used to pass through a successful result while handling an error.
+  constexpr auto map_err(std::invocable<E const&> auto&& op) const&
+    noexcept(std::is_nothrow_invocable_v<decltype(op), E>)
+  {
+    using result_type = basic_result<_mutability, T, std::invoke_result_t<decltype(op), E>>;
+    return is_err()
+               ? static_cast<result_type>(failure{std::invoke(std::forward<decltype(op)>(op), std::get<failure<E>>(storage_).get())})
                : static_cast<result_type>(success{std::get<success<T>>(storage_).get()});
   }
 
@@ -476,15 +486,12 @@ public:
   ///
   /// @note
   ///   This function can be used to pass through a successful result while handling an error.
-  template <class O>
-  constexpr auto map_err(O && op) &&
-    noexcept(std::is_nothrow_invocable_v<O, E>)
-    -> std::enable_if_t<std::is_invocable_v<O, E>,
-    basic_result<_mutability, T, std::invoke_result_t<O, E>>>
+  constexpr auto map_err(std::invocable<E&&> auto&& op) &&
+    noexcept(std::is_nothrow_invocable_v<decltype(op), E>)
   {
-    using result_type = basic_result<_mutability, T, std::invoke_result_t<O, E>>;
+    using result_type = basic_result<_mutability, T, std::invoke_result_t<decltype(op), E>>;
     return is_err()
-               ? static_cast<result_type>(failure{std::invoke(std::forward<O>(op), std::move(std::get<failure<E>>(storage_).get()))})
+               ? static_cast<result_type>(failure{std::invoke(std::forward<decltype(op)>(op), std::move(std::get<failure<E>>(storage_).get()))})
                : static_cast<result_type>(success{std::move(std::get<success<T>>(storage_).get())});
   }
 
@@ -492,19 +499,16 @@ public:
   ///   Calls `op` if the result is success, otherwise; returns the failure value of self.
   ///
   /// @constrains
-  ///   requires requires is_convertible_result_with<std::invoke_result_t<O, T>, failure<F>>
+  ///   op: std::regular_invocable<T&>
   ///
   /// @note
   ///   This function can be used for control flow based on result values.
-  template <class O>
-  constexpr auto and_then(O && op) const &
-    noexcept(std::is_nothrow_invocable_v<O, T>)
-    -> std::enable_if_t<is_convertible_result_with_v<std::invoke_result_t<O, T>, failure<E>>,
-    std::invoke_result_t<O, T>>
+  constexpr auto and_then(std::regular_invocable<T&> auto&& op) &
+    noexcept(std::is_nothrow_invocable_v<decltype(op), T>)
   {
-    using result_type = std::invoke_result_t<O, T>;
+    using result_type = std::invoke_result_t<decltype(op), T>;
     return is_ok()
-               ? std::invoke(std::forward<O>(op), std::get<success<T>>(storage_).get())
+               ? std::invoke(std::forward<decltype(op)>(op), std::get<success<T>>(storage_).get())
                : static_cast<result_type>(failure{std::get<failure<E>>(storage_).get()});
   }
 
@@ -512,19 +516,33 @@ public:
   ///   Calls `op` if the result is success, otherwise; returns the failure value of self.
   ///
   /// @constrains
-  ///   requires requires is_convertible_result_with<std::invoke_result_t<O, T>, success<T>>
+  ///   op: std::invocable<T const&>
   ///
   /// @note
   ///   This function can be used for control flow based on result values.
-  template <class O>
-  constexpr auto and_then(O && op) &&
-    noexcept(std::is_nothrow_invocable_v<O, T>)
-    -> std::enable_if_t<is_convertible_result_with_v<std::invoke_result_t<O, T>, failure<E>>,
-    std::invoke_result_t<O, T>>
+  constexpr auto and_then(std::invocable<T const&> auto&& op) const &
+    noexcept(std::is_nothrow_invocable_v<decltype(op), T>)
   {
-    using result_type = std::invoke_result_t<O, T>;
+    using result_type = std::invoke_result_t<decltype(op), T>;
     return is_ok()
-               ? std::invoke(std::forward<O>(op), std::move(std::get<success<T>>(storage_).get()))
+               ? std::invoke(std::forward<decltype(op)>(op), std::get<success<T>>(storage_).get())
+               : static_cast<result_type>(failure{std::get<failure<E>>(storage_).get()});
+  }
+
+  /// @brief
+  ///   Calls `op` if the result is success, otherwise; returns the failure value of self.
+  ///
+  /// @constrains
+  ///   op: std::invocable<T&&>
+  ///
+  /// @note
+  ///   This function can be used for control flow based on result values.
+  constexpr auto and_then(std::invocable<T&&> auto&& op) &&
+    noexcept(std::is_nothrow_invocable_v<decltype(op), T>)
+  {
+    using result_type = std::invoke_result_t<decltype(op), T>;
+    return is_ok()
+               ? std::invoke(std::forward<decltype(op)>(op), std::move(std::get<success<T>>(storage_).get()))
                : static_cast<result_type>(failure{std::move(std::get<failure<E>>(storage_).get())});
   }
 
@@ -532,19 +550,16 @@ public:
   ///   Calls `op` if the result is failure, otherwise; returns the success value of self.
   ///
   /// @constrains
-  ///   requires requires is_convertible_result_with<std::invoke_result_t<O, T>, success<T>>
+  ///   op: std::regular_invocable<E&>
   ///
   /// @note
   ///   This function can be used for control flow based on result values.
-  template <class O>
-  constexpr auto or_else(O && op) const &
-    noexcept(std::is_nothrow_invocable_v<O, E>)
-    -> std::enable_if_t<is_convertible_result_with_v<std::invoke_result_t<O, T>, success<T>>,
-    std::invoke_result_t<O, E>>
+  constexpr auto or_else(std::regular_invocable<E&> auto&& op) &
+    noexcept(std::is_nothrow_invocable_v<decltype(op), E>)
   {
-    using result_type = std::invoke_result_t<O, E>;
+    using result_type = std::invoke_result_t<decltype(op), E>;
     return is_err()
-               ? std::invoke(std::forward<O>(op), std::get<failure<E>>(storage_).get())
+               ? std::invoke(std::forward<decltype(op)>(op), std::get<failure<E>>(storage_).get())
                : static_cast<result_type>(success{std::get<success<T>>(storage_).get()});
   }
 
@@ -552,19 +567,33 @@ public:
   ///   Calls `op` if the result is failure, otherwise; returns the success value of self.
   ///
   /// @constrains
-  ///   { std::invoke(op, unwrap_err()) } -> ConvertibleTo<basic_result<T, U>>
+  ///   op: std::invocable<E const&>
   ///
   /// @note
   ///   This function can be used for control flow based on result values.
-  template <class O>
-  constexpr auto or_else(O && op) &&
-    noexcept(std::is_nothrow_invocable_v<O, E>)
-    -> std::enable_if_t<is_convertible_result_with_v<std::invoke_result_t<O, T>, success<T>>,
-    std::invoke_result_t<O, E>>
+  constexpr auto or_else(std::invocable<E const&> auto&& op) const&
+    noexcept(std::is_nothrow_invocable_v<decltype(op), E>)
   {
-    using result_type = std::invoke_result_t<O, E>;
+    using result_type = std::invoke_result_t<decltype(op), E>;
     return is_err()
-               ? std::invoke(std::forward<O>(op), std::get<failure<E>>(std::move(storage_)).get())
+               ? std::invoke(std::forward<decltype(op)>(op), std::get<failure<E>>(storage_).get())
+               : static_cast<result_type>(success{std::get<success<T>>(storage_).get()});
+  }
+
+  /// @brief
+  ///   Calls `op` if the result is failure, otherwise; returns the success value of self.
+  ///
+  /// @constrains
+  ///   op: std::invocable<E&&>
+  ///
+  /// @note
+  ///   This function can be used for control flow based on result values.
+  constexpr auto or_else(std::invocable<E&&> auto&& op) &&
+    noexcept(std::is_nothrow_invocable_v<decltype(op), E>)
+  {
+    using result_type = std::invoke_result_t<decltype(op), E>;
+    return is_err()
+               ? std::invoke(std::forward<decltype(op)>(op), std::get<failure<E>>(std::move(storage_)).get())
                : static_cast<result_type>(success{std::get<success<T>>(std::move(storage_)).get()});
   }
 
@@ -632,12 +661,10 @@ public:
   ///   if you are passing the result of a function call,
   ///   it is recommended to use `unwrap_or_else`,
   ///   which is lazily evaluated.
-  template <class U,
-            where<meta::has_common_type<T, U&&>> = required>
-  decltype(auto) unwrap_or(U&& optb) const& noexcept
+  decltype(auto) unwrap_or(std::common_with<T&> auto&& optb) & noexcept
   {
     return is_ok() ? std::get<success<T>>(storage_).get()
-                   : std::forward<U>(optb);
+                   : std::forward<decltype(optb)>(optb);
   }
 
   /// @brief
@@ -652,54 +679,54 @@ public:
   ///   if you are passing the result of a function call,
   ///   it is recommended to use `unwrap_or_else`,
   ///   which is lazily evaluated.
-  template <class U,
-            where<meta::has_common_type<std::remove_reference_t<T>&&, U&&>> = required>
-  decltype(auto) unwrap_or(U&& optb) && noexcept {
+  decltype(auto) unwrap_or(std::common_with<T const&> auto&& optb) const& noexcept
+  {
+    return is_ok() ? std::get<success<T>>(storage_).get()
+                   : std::forward<decltype(optb)>(optb);
+  }
+
+  /// @brief
+  ///   Unwraps a result, yielding the content of an success.
+  ///   Else, it returns optb.
+  ///
+  /// @constrains
+  ///   { is_ok() ? unwrap() : optb }
+  ///
+  /// @note
+  ///   Arguments passed to `unwrap_or` are eagerly evaluated;
+  ///   if you are passing the result of a function call,
+  ///   it is recommended to use `unwrap_or_else`,
+  ///   which is lazily evaluated.
+  decltype(auto) unwrap_or(std::common_with<std::remove_reference_t<T>&&> auto&& optb) && noexcept
+  {
     return is_ok() ? std::move(std::get<success<T>>(storage_).get())
-                   : std::forward<U>(optb);
+                   : std::forward<decltype(optb)>(optb);
   }
 
   /// @brief
   ///   Unwraps a result, yielding the content of an success.
   ///
   /// @constrains
-  ///   { std::invoke(op, unwrap_err()) } -> ConvertibleTo<T> ||
-  ///   { std::invoke(op) } -> ConvertibleTo<T>
-  ///
-  /// @note
-  ///   If the value is an failure then;
-  ///     - `std::is_invocable_r_v<T, O, E>` is true then; it invoke `op` with its value or,
-  ///     - `std::is_invocable_r_v<T, O>` is true then; it invoke `op` without value,
-  ///     - otherwise; static_assert.
+  ///   op: requires std::is_invocable_r_v<T, O, E>
   template <class O>
-  std::enable_if_t<
-    std::disjunction_v<
-      std::is_invocable_r<T, O, E>,
-      std::is_invocable_r<T, O>>,
-  T>
-  unwrap_or_else(O && op) const
-    noexcept(
-      std::disjunction_v<
-        std::conjunction<
-          std::is_invocable_r<T, O, E>,
-          std::is_nothrow_invocable_r<T, O, E>
-        >,
-        std::conjunction<
-          std::is_invocable_r<T, O, E>,
-          std::is_nothrow_invocable_r<T, O, E>
-        >
-      >
-    )
+  auto unwrap_or_else(O && op) const
+    noexcept(std::is_nothrow_invocable_r_v<T, O, E>)
+    requires std::is_invocable_r_v<T, O, E>
   {
-    if constexpr (std::is_invocable_r_v<T, O, E>) {
-      return is_ok() ? std::get<success<T>>(storage_).get() : std::invoke(std::forward<O>(op), std::get<failure<E>>(storage_).get());
-    }
-    else if constexpr (std::is_invocable_r_v<T, O>) {
-      return is_ok() ? std::get<success<T>>(storage_).get() : std::invoke(std::forward<O>(op));
-    }
-    else {
-      static_assert([]{ return false; }(), "invalid argument: designated function object is not invocable");
-    }
+    return is_ok() ? std::get<success<T>>(storage_).get() : std::invoke(std::forward<O>(op), std::get<failure<E>>(storage_).get());
+  }
+
+  /// @brief
+  ///   Unwraps a result, yielding the content of an success.
+  ///
+  /// @constrains
+  ///   op: requires std::is_invocable_r_v<T, O>
+  template <class O>
+  auto unwrap_or_else(O && op) const
+    noexcept(std::is_nothrow_invocable_r_v<T, O>)
+    requires std::is_invocable_r_v<T, O> && (!std::is_invocable_r_v<T, O, E>)
+  {
+    return is_ok() ? std::get<success<T>>(storage_).get() : std::invoke(std::forward<O>(op));
   }
 
   /// @brief
@@ -709,7 +736,7 @@ public:
   ///   Panics if the value is an failure, with a panic message provided by the failure's value.
   force_add_const_t<T>&
   unwrap() const& {
-    if constexpr (trait::formattable_element<E>::value) {
+    if constexpr (display<E>) {
       if ( is_ok() ) {
         return std::get<success<T>>(storage_).get();
       }
@@ -734,7 +761,7 @@ public:
   ///   Panics if the value is an failure, with a panic message provided by the failure's value.
   std::conditional_t<is_mut_v<_mutability>, T&, force_add_const_t<T>&>
   unwrap() & {
-    if constexpr (trait::formattable_element<E>::value) {
+    if constexpr (display<E>) {
       if ( is_ok() ) {
         return std::get<success<T>>(storage_).get();
       }
@@ -759,7 +786,7 @@ public:
   ///   Panics if the value is an success, with a panic message provided by the success's value.
   force_add_const_t<E>&
   unwrap_err() const& {
-    if constexpr (trait::formattable_element<T>::value) {
+    if constexpr (display<T>) {
       if ( is_err() ) {
         return std::get<failure<E>>(storage_).get();
       }
@@ -784,7 +811,7 @@ public:
   ///   Panics if the value is an success, with a panic message provided by the success's value.
   std::conditional_t<is_mut_v<_mutability>, E&, force_add_const_t<E>&>
   unwrap_err() & {
-    if constexpr (trait::formattable_element<T>::value) {
+    if constexpr (display<T>) {
       if ( is_err() ) {
         return std::get<failure<E>>(storage_).get();
       }
@@ -987,14 +1014,9 @@ public:
   template <class F>
   auto map_anything_else(F&& f) &
     noexcept(std::is_nothrow_invocable_v<F, E&> && std::is_nothrow_invocable_v<F, T&>)
-    -> std::enable_if_t<
-          std::conjunction_v<
-            std::is_invocable<F, T&>,
-            std::is_invocable<F, E&>,
-            std::is_convertible<std::invoke_result_t<F, T&>, std::invoke_result_t<F, E&>>,
-            std::is_convertible<std::invoke_result_t<F, E&>, std::invoke_result_t<F, T&>>
-          >,
-    std::common_type_t<std::invoke_result_t<F, T&>, std::invoke_result_t<F, E&>>>
+    requires std::regular_invocable<F&&, T&>
+          && std::regular_invocable<F&&, E&>
+          && std::common_with<std::invoke_result_t<F&&, T&>, std::invoke_result_t<F&&, E&>>
   {
     auto decay_copy = [](auto&& some) -> std::remove_const_t<std::remove_reference_t<decltype(some)>> { return std::forward<decltype(some)>(some); };
     return this->map_or_else(decay_copy(std::forward<F>(f)), decay_copy(std::forward<F>(f)));
@@ -1003,30 +1025,20 @@ public:
   template <class F>
   auto map_anything_else(F&& f) const&
     noexcept(std::is_nothrow_invocable_v<F, E const&> && std::is_nothrow_invocable_v<F, T const&>)
-    -> std::enable_if_t<
-          std::conjunction_v<
-            std::is_invocable<F, T const&>,
-            std::is_invocable<F, E const&>,
-            std::is_convertible<std::invoke_result_t<F, T const&>, std::invoke_result_t<F, E const&>>,
-            std::is_convertible<std::invoke_result_t<F, E const&>, std::invoke_result_t<F, T const&>>
-          >,
-    std::common_type_t<std::invoke_result_t<F, T const&>, std::invoke_result_t<F, E const&>>>
+    requires std::regular_invocable<F&&, T const&>
+          && std::regular_invocable<F&&, E const&>
+          && std::common_with<std::invoke_result_t<F&&, T const&>, std::invoke_result_t<F&&, E const&>>
   {
     auto decay_copy = [](auto&& some) -> std::remove_const_t<std::remove_reference_t<decltype(some)>> { return std::forward<decltype(some)>(some); };
     return this->map_or_else(decay_copy(std::forward<F>(f)), decay_copy(std::forward<F>(f)));
   }
 
   template <class F>
-  auto map_anything_else(F&& f) &&
-    noexcept(std::is_nothrow_invocable_v<F, E&&> && std::is_nothrow_invocable_v<F, T&&>)
-    -> std::enable_if_t<
-          std::conjunction_v<
-            std::is_invocable<F, T&&>,
-            std::is_invocable<F, E&&>,
-            std::is_convertible<std::invoke_result_t<F, T&&>, std::invoke_result_t<F, E&&>>,
-            std::is_convertible<std::invoke_result_t<F, E&&>, std::invoke_result_t<F, T&&>>
-          >,
-    std::common_type_t<std::invoke_result_t<F, T&&>, std::invoke_result_t<F, E&&>>>
+  auto map_anything_else(F&& f) const&
+    noexcept(std::is_nothrow_invocable_v<F, std::remove_reference_t<E>&&> && std::is_nothrow_invocable_v<F, std::remove_reference_t<T>&&>)
+    requires std::regular_invocable<F&&, std::remove_reference_t<T>&&>
+          && std::regular_invocable<F&&, std::remove_reference_t<E>&&>
+          && std::common_with<std::invoke_result_t<F&&, std::remove_reference_t<T>&&>, std::invoke_result_t<F&&, std::remove_reference_t<E>&&>>
   {
     auto decay_copy = [](auto&& some) -> std::remove_const_t<std::remove_reference_t<decltype(some)>> { return std::forward<decltype(some)>(some); };
     return std::move(*this).map_or_else(decay_copy(std::forward<F>(f)), decay_copy(std::forward<F>(f)));
@@ -1041,11 +1053,8 @@ public:
   ///
   /// @note
   ///   This method tests for self and other values to be equal, and is used by `==` found by ADL.
-  template <mutability _mut, class U, class F>
-  std::enable_if_t<
-    std::conjunction_v<is_comparable_with<T, U>, is_comparable_with<E, F>>,
-  bool>
-  operator==(basic_result<_mut, U, F> const& rhs) const& {
+  template <mutability _mut, std::equality_comparable_with<T> U, std::equality_comparable_with<E> F>
+  bool operator==(basic_result<_mut, U, F> const& rhs) const& {
     return std::visit(
       boost::hana::overload(
         [](success<T> const& l, success<U> const& r) { return l.get() == r.get(); },
@@ -1063,11 +1072,8 @@ public:
   ///
   /// @note
   ///   This method tests for self and other values to be not equal, and is used by `==` found by ADL.
-  template <mutability _mut, class U, class F>
-  std::enable_if_t<
-    std::conjunction_v<is_comparable_with<T, U>, is_comparable_with<E, F>>,
-  bool>
-  operator!=(basic_result<_mut, U, F> const& rhs) const& {
+  template <mutability _mut, std::equality_comparable_with<T> U, std::equality_comparable_with<E> F>
+  bool operator!=(basic_result<_mut, U, F> const& rhs) const& {
     return std::visit(
       boost::hana::overload(
         [](success<T> const& l, success<U> const& r) { return !(l.get() == r.get()); },
@@ -1084,11 +1090,8 @@ public:
   ///
   /// @note
   ///   This method tests for self and other values to be equal, and is used by `==` found by ADL.
-  template <class U>
-  std::enable_if_t<
-    is_comparable_with<T, U>::value,
-  bool>
-  operator==(success<U> const& rhs) const {
+  template <std::equality_comparable_with<T> U>
+  bool operator==(success<U> const& rhs) const {
     return this->is_ok() ? this->unwrap() == rhs.get() : false;
   }
 
@@ -1100,11 +1103,8 @@ public:
   ///
   /// @note
   ///   This method tests for self and other values to be not equal, and is used by `==` found by ADL.
-  template <class U>
-  std::enable_if_t<
-    is_comparable_with<T, U>::value,
-  bool>
-  operator!=(success<U> const& rhs) const {
+  template <std::equality_comparable_with<T> U>
+  bool operator!=(success<U> const& rhs) const {
     return this->is_ok() ? !(this->unwrap() == rhs.get()) : true;
   }
 
@@ -1116,11 +1116,8 @@ public:
   ///
   /// @note
   ///   This method tests for self and other values to be equal, and is used by `==` found by ADL.
-  template <class F>
-  std::enable_if_t<
-    is_comparable_with<E, F>::value,
-  bool>
-  operator==(failure<F> const& rhs) const {
+  template <std::equality_comparable_with<E> F>
+  bool operator==(failure<F> const& rhs) const {
     return this->is_err() ? this->unwrap_err() == rhs.get() : false;
   }
 
@@ -1132,21 +1129,13 @@ public:
   ///
   /// @note
   ///   This method tests for self and other values to be equal, and is used by `==` found by ADL.
-  template <class F>
-  std::enable_if_t<
-    is_comparable_with<E, F>::value,
-  bool>
-  operator!=(failure<F> const& rhs) const {
+  template <std::equality_comparable_with<E> F>
+  bool operator!=(failure<F> const& rhs) const {
     return this->is_err() ? !(this->unwrap_err() == rhs.get()) : true;
   }
 
-  template <mutability _, class U, class F>
-  std::enable_if_t<
-    std::conjunction_v<
-      meta::is_less_comparable_with<T, U>,
-      meta::is_less_comparable_with<E, F>>,
-  bool>
-  operator<(basic_result<_, U, F> const& rhs) const {
+  template <mutability _, std::totally_ordered_with<T> U, std::totally_ordered_with<E> F>
+  bool operator<(basic_result<_, U, F> const& rhs) const {
     return std::visit(
       boost::hana::overload(
         [](success<T> const& l, success<U> const& r) { return l.get() < r.get(); },
@@ -1156,29 +1145,18 @@ public:
       this->storage_, rhs.storage_);
   }
 
-  template <class U>
-  std::enable_if_t<
-      meta::is_less_comparable_with<U, T>::value,
-  bool>
-  operator<(success<U> const& rhs) const {
+  template <std::totally_ordered_with<T> U>
+  bool operator<(success<U> const& rhs) const {
     return rhs > *this;
   }
 
-  template <class F>
-  std::enable_if_t<
-      meta::is_less_comparable_with<F, E>::value,
-  bool>
-  operator<(failure<F> const& rhs) const {
+  template <std::totally_ordered_with<E> F>
+  bool operator<(failure<F> const& rhs) const {
     return rhs > *this;
   }
 
-  template <mutability _, class U, class F>
-  std::enable_if_t<
-    std::conjunction_v<
-      meta::is_less_comparable_with<U, T>,
-      meta::is_less_comparable_with<F, E>>,
-  bool>
-  operator>(basic_result<_, U, F> const& rhs) const {
+  template <mutability _, std::totally_ordered_with<T> U, std::totally_ordered_with<E> F>
+  bool operator>(basic_result<_, U, F> const& rhs) const {
     return std::visit(
       boost::hana::overload(
         [](success<T> const& l, success<U> const& r) { return r.get() < l.get(); },
@@ -1188,31 +1166,18 @@ public:
       this->storage_, rhs.storage_);
   }
 
-  template <class U>
-  std::enable_if_t<
-      meta::is_less_comparable_with<U, T>::value,
-  bool>
-  operator>(success<U> const& rhs) const {
+  template <std::totally_ordered_with<T> U>
+  bool operator>(success<U> const& rhs) const {
     return rhs < *this;
   }
 
-  template <class F>
-  std::enable_if_t<
-      meta::is_less_comparable_with<F, E>::value,
-  bool>
-  operator>(failure<F> const& rhs) const {
+  template <std::totally_ordered_with<E> F>
+  bool operator>(failure<F> const& rhs) const {
     return rhs < *this;
   }
 
-  template <mutability _, class U, class F>
-  std::enable_if_t<
-    std::conjunction_v<
-      meta::is_less_comparable_with<T, U>,
-      meta::is_less_comparable_with<E, F>,
-      is_comparable_with<T, U>,
-      is_comparable_with<E, F>>,
-  bool>
-  operator<=(basic_result<_, U, F> const& rhs) const {
+  template <mutability _, std::totally_ordered_with<T> U, std::totally_ordered_with<E> F>
+  bool operator<=(basic_result<_, U, F> const& rhs) const {
     return std::visit(
       boost::hana::overload(
         [](success<T> const& l, success<U> const& r) { return (l.get() == r.get()) || (l.get() < r.get()); },
@@ -1222,35 +1187,18 @@ public:
       this->storage_, rhs.storage_);
   }
 
-  template <class U>
-  std::enable_if_t<
-    std::conjunction_v<
-      meta::is_less_comparable_with<U, T>,
-      is_comparable_with<U, T>>,
-  bool>
-  operator<=(success<U> const& rhs) const {
+  template <std::totally_ordered_with<T> U>
+  bool operator<=(success<U> const& rhs) const {
     return rhs >= *this;
   }
 
-  template <class F>
-  std::enable_if_t<
-    std::conjunction_v<
-      meta::is_less_comparable_with<F, E>,
-      is_comparable_with<F, E>>,
-  bool>
-  operator<=(failure<F> const& rhs) const {
+  template <std::totally_ordered_with<E> F>
+  bool operator<=(failure<F> const& rhs) const {
     return rhs >= *this;
   }
 
-  template <mutability _, class U, class F>
-  std::enable_if_t<
-    std::conjunction_v<
-      meta::is_less_comparable_with<T, U>,
-      meta::is_less_comparable_with<E, F>,
-      is_comparable_with<T, U>,
-      is_comparable_with<E, F>>,
-  bool>
-  operator>=(basic_result<_, U, F> const& rhs) const {
+  template <mutability _, std::totally_ordered_with<T> U, std::totally_ordered_with<E> F>
+  bool operator>=(basic_result<_, U, F> const& rhs) const {
     return std::visit(
       boost::hana::overload(
         [](success<T> const& l, success<U> const& r) { return (l.get() == r.get()) || (r.get() < l.get()); },
@@ -1260,23 +1208,13 @@ public:
       this->storage_, rhs.storage_);
   }
 
-  template <class U>
-  std::enable_if_t<
-    std::conjunction_v<
-      meta::is_less_comparable_with<U, T>,
-      is_comparable_with<U, T>>,
-  bool>
-  operator>=(success<U> const& rhs) const {
+  template <std::totally_ordered_with<T> U>
+  bool operator>=(success<U> const& rhs) const {
     return rhs <= *this;
   }
 
-  template <class F>
-  std::enable_if_t<
-    std::conjunction_v<
-      meta::is_less_comparable_with<F, E>,
-      is_comparable_with<F, E>>,
-  bool>
-  operator>=(failure<F> const& rhs) const {
+  template <std::totally_ordered_with<E> F>
+  bool operator>=(failure<F> const& rhs) const {
     return rhs <= *this;
   }
 

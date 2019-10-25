@@ -285,6 +285,7 @@ TEST_CASE("unwrap_or_else() test", "[result][unwrap_or_else]"){
   REQUIRE(result<u32, str>{success(2)}.unwrap_or_else(count) ==  2);
   REQUIRE(result<u32, str>{failure("foo"s)}.unwrap_or_else(count) ==  3ull);
   REQUIRE(result<u32, str>{failure("foo"s)}.unwrap_or_else([]{ return 3ull; }) ==  3ull);
+  REQUIRE(result<u32, str>{failure("foo"s)}.unwrap_or_else([](auto&&...){ return 3ull; }) ==  3ull);
 }
 
 TEST_CASE("unwrap() test", "[result][unwrap]"){
