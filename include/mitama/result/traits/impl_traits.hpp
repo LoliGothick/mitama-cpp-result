@@ -58,7 +58,7 @@ struct formattable_element<T, std::void_t<decltype(std::declval<std::ostream &>(
 
 template <class Range>
 struct formattable_range<Range, std::enable_if_t<meta::is_range<Range>::value>>
-    : formattable<typename meta::remove_cvr_t<Range>::value_type> {};
+    : formattable<typename std::remove_cvref_t<Range>::value_type> {};
 }
 
 namespace mitama {
@@ -81,8 +81,8 @@ struct formattable_tuple<Tuple, std::enable_if_t<meta::is_tuple_like<Tuple>::val
 {};
 
 template <class Dict>
-struct formattable_dictionary<Dict, std::void_t<typename meta::remove_cvr_t<Dict>::key_type, typename meta::remove_cvr_t<Dict>::mapped_type>>
-    : std::conjunction<formattable<typename meta::remove_cvr_t<Dict>::key_type>, formattable<typename meta::remove_cvr_t<Dict>::mapped_type>> {};
+struct formattable_dictionary<Dict, std::void_t<typename std::remove_cvref_t<Dict>::key_type, typename std::remove_cvref_t<Dict>::mapped_type>>
+    : std::conjunction<formattable<typename std::remove_cvref_t<Dict>::key_type>, formattable<typename std::remove_cvref_t<Dict>::mapped_type>> {};
 
 }
 

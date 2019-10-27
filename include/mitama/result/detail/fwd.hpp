@@ -20,10 +20,13 @@ template < mutability Mut >
 inline constexpr bool is_mut_v = !static_cast<bool>(Mut);
 
 template <mutability,
-          class = std::monostate,   // success type
-          class = std::monostate,   // failure type
-          class = decltype(nullptr) // for detection idiom
+          class T = std::monostate,  // success type
+          class E = std::monostate   // failure type
 >
+  requires (std::is_object_v<std::remove_cvref_t<T>>)
+        && (std::is_object_v<std::remove_cvref_t<E>>)
+        && (std::negation_v<std::is_array<std::remove_cvref_t<T>>>)
+        && (std::negation_v<std::is_array<std::remove_cvref_t<E>>>)
 class basic_result;
 
 /// alias template for immutable result

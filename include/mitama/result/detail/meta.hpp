@@ -9,9 +9,6 @@
 namespace mitama {
 inline namespace meta {
 
-template < class T > struct remove_cvr: std::remove_cv<std::remove_reference_t<T>> {};
-template < class T > using remove_cvr_t = typename remove_cvr<T>::type;
-
 template < class T, class = void >
 struct has_type: std::false_type {};
 
@@ -114,8 +111,8 @@ struct is_boost_optional<boost::optional<T>>: std::true_type {};
 template < class T >
 struct is_optional
   : std::disjunction<
-      meta::is_std_optional<meta::remove_cvr_t<T>>,
-      meta::is_boost_optional<meta::remove_cvr_t<T>>
+      meta::is_std_optional<std::remove_cvref_t<T>>,
+      meta::is_boost_optional<std::remove_cvref_t<T>>
     >
 {};
 
@@ -128,7 +125,7 @@ struct is_range<Range, std::void_t<decltype(*std::begin(std::declval<std::decay_
 /// is_dictionary
 template <class, class = void> struct is_dictionary: std::false_type {};
 template <class Dict>
-struct is_dictionary<Dict, std::void_t<typename meta::remove_cvr_t<Dict>::key_type, typename meta::remove_cvr_t<Dict>::mapped_type>>
+struct is_dictionary<Dict, std::void_t<typename std::remove_cvref_t<Dict>::key_type, typename std::remove_cvref_t<Dict>::mapped_type>>
   : is_range<Dict> {};
 
 template < class > struct repack;

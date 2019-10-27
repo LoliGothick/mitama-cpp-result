@@ -28,18 +28,16 @@ namespace mitama {
 /// @param T: Type of successful value
 /// @param E: Type of unsuccessful value
 template <mutability _mutability, class T, class E>
-class [[nodiscard]] basic_result<_mutability, T, E,
-  trait::where<
-    std::is_object<meta::remove_cvr_t<T>>,
-    std::is_object<meta::remove_cvr_t<E>>,
-    std::negation<std::is_array<meta::remove_cvr_t<T>>>,
-    std::negation<std::is_array<meta::remove_cvr_t<E>>>
-  >>
+  requires (std::is_object_v<std::remove_cvref_t<T>>)
+        && (std::is_object_v<std::remove_cvref_t<E>>)
+        && (std::negation_v<std::is_array<std::remove_cvref_t<T>>>)
+        && (std::negation_v<std::is_array<std::remove_cvref_t<E>>>)
+class [[nodiscard]] basic_result
 {
   /// result storage
   std::variant<success<T>, failure<E>> storage_;
   /// friend accessors
-  template <mutability, class, class, class>
+  template <mutability, class, class>
   friend class basic_result;
   /// private aliases
   template <class... Requires>
@@ -53,8 +51,8 @@ public:
   using err_type = E;
   using ok_reference_type = std::remove_reference_t<T>&;
   using err_reference_type = std::remove_reference_t<E>&;
-  using ok_const_reference_type = meta::remove_cvr_t<T> const&;
-  using err_const_reference_type = meta::remove_cvr_t<E> const&;
+  using ok_const_reference_type = std::remove_cvref_t<T> const&;
+  using err_const_reference_type = std::remove_cvref_t<E> const&;
   /// mutability
   static constexpr bool is_mut = !static_cast<bool>(_mutability);
   static constexpr mutability mutability_v = _mutability;
@@ -291,12 +289,12 @@ public:
   /// @brief
   ///   Produces a new basic_result, containing a reference into the original, leaving the original in place.
   constexpr auto as_ref() const& noexcept
-    -> basic_result<_mutability, meta::remove_cvr_t<T> const&, meta::remove_cvr_t<E> const&>
+    -> basic_result<_mutability, std::remove_cvref_t<T> const&, std::remove_cvref_t<E> const&>
   {
     if ( is_ok() )
-      return basic_result<_mutability, meta::remove_cvr_t<T> const&, meta::remove_cvr_t<E> const&>{in_place_ok, std::get<success<T>>(storage_).get()};
+      return basic_result<_mutability, std::remove_cvref_t<T> const&, std::remove_cvref_t<E> const&>{in_place_ok, std::get<success<T>>(storage_).get()};
     else
-      return basic_result<_mutability, meta::remove_cvr_t<T> const&, meta::remove_cvr_t<E> const&>{in_place_err, std::get<failure<E>>(storage_).get()};
+      return basic_result<_mutability, std::remove_cvref_t<T> const&, std::remove_cvref_t<E> const&>{in_place_err, std::get<failure<E>>(storage_).get()};
   }
 
   /// @brief
@@ -677,7 +675,7 @@ public:
   ///   creating a new one with a reference to the original one,
   ///   additionally coercing the success arm of the basic_result via `operator*`.
   constexpr auto indirect_ok() const& requires (dereferencable<T>) {
-    using const_indirect_ok_result = basic_result<_mutability, meta::remove_cvr_t<deref_type_t<T>> const&, meta::remove_cvr_t<E> const&>;
+    using const_indirect_ok_result = basic_result<_mutability, std::remove_cvref_t<deref_type_t<T>> const&, std::remove_cvref_t<E> const&>;
     if ( is_ok() ) {
       return const_indirect_ok_result{in_place_ok, *unwrap()};
     }
@@ -742,7 +740,7 @@ public:
   ///   creating a new one with a reference to the original one,
   ///   additionally coercing the failure arm of the basic_result via `operator*`.
   constexpr auto indirect_err() const& requires (dereferencable<E>) {
-    using const_indirect_err_result = basic_result<_mutability, meta::remove_cvr_t<T> const&, meta::remove_cvr_t<deref_type_t<E>> const&>;
+    using const_indirect_err_result = basic_result<_mutability, std::remove_cvref_t<T> const&, std::remove_cvref_t<deref_type_t<E>> const&>;
     if ( is_ok() ) {
       return const_indirect_err_result{in_place_ok, unwrap()};
     }
@@ -809,7 +807,7 @@ public:
   ///   creating a new one with a reference to the original one,
   ///   additionally coercing the success and failure arm of the basic_result via `operator*`.
   constexpr auto indirect() const& requires (dereferencable<E> && dereferencable<E>) {
-    using const_indirect_result = basic_result<_mutability, meta::remove_cvr_t<deref_type_t<T>> const&, meta::remove_cvr_t<deref_type_t<E>> const&>;
+    using const_indirect_result = basic_result<_mutability, std::remove_cvref_t<deref_type_t<T>> const&, std::remove_cvref_t<deref_type_t<E>> const&>;
     if ( is_ok() ) {
       return const_indirect_result{in_place_ok, *unwrap()};
     }
