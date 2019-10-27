@@ -10,6 +10,8 @@
 #include <mitama/maybe/fwd/maybe_fwd.hpp>
 #include <mitama/maybe/factory/just_nothing.hpp>
 #include <mitama/concepts/display.hpp>
+#include <mitama/concepts/pointer_like.hpp>
+#include <mitama/concepts/dereferencable.hpp>
 
 #include <boost/format.hpp>
 #include <boost/hana/functional/fix.hpp>
@@ -26,122 +28,13 @@
 #include <string_view>
 #include <cassert>
 #include <concepts>
-#include <mitama/concepts/pointer_like.hpp>
-
-namespace mitama::mitamagic {
-template <pointer_like T>
-struct element_type {
-    using type = std::remove_reference_t<decltype(*std::declval<T>())>;
-};
-}
 
 namespace mitama {
 
-template <class T, class=void>
-class maybe_unwrap_or_default_injector {
-public:
-    void unwrap_or_default() = delete;
-};
-
 template <class T>
-class maybe_unwrap_or_default_injector<maybe<T>,
-    std::enable_if_t<
-        std::disjunction_v<
-            std::is_default_constructible<T>,
-            std::is_aggregate<T>>>>
-{
-public:
-  T unwrap_or_default() const
-  {
-    if constexpr (std::is_aggregate_v<T>){
-      return static_cast<maybe<T> const *>(this)->is_just()
-        ? static_cast<maybe<T> const *>(this)->unwrap()
-        : T{};
-    }
-    else {
-      return static_cast<maybe<T> const *>(this)->is_just()
-        ? static_cast<maybe<T> const *>(this)->unwrap()
-        : T();
-    }
-  }
-};
-
-template <class, class=void> class maybe_flatten_injector {
-public:
-    void flatten() = delete;
-};
-
-template <class T>
-class maybe_flatten_injector<maybe<T>,
-    std::enable_if_t<is_maybe<std::decay_t<T>>::value> >
-{
-public:
-    auto flatten() const& {
-        return static_cast<maybe<T>const*>(this)->is_just()
-            ? static_cast<maybe<T>const*>(this)->unwrap().as_ref().cloned()
-            : nothing;
-    }
-};
-
-
-template <class, class=void> class maybe_cloned_injector {
-public:
-    void cloned() = delete;
-};
-
-template <class T>
-class maybe_cloned_injector<maybe<T>,
-    std::enable_if_t<
-        std::conjunction_v<
-            std::is_lvalue_reference<T>,
-            std::is_copy_constructible<std::remove_const_t<std::remove_reference_t<T>>>>>>
-{
-public:
-    maybe<std::remove_reference_t<T>> cloned() const {
-        auto decay_copy = [](auto&& some) -> std::remove_const_t<std::remove_reference_t<T>> { return std::forward<decltype(some)>(some); };
-        return static_cast<maybe<T>const*>(this)->is_just()
-            ? maybe<std::remove_reference_t<T>>{just(decay_copy(static_cast<maybe<T>const*>(this)->unwrap()))}
-            : nothing;
-    }
-};
-
-template <class, class=void> class maybe_replace_injector {
-public:
-    void cloned() = delete;
-};
-
-template <class T>
-class maybe_replace_injector<maybe<T>, std::enable_if_t<std::is_copy_constructible_v<std::remove_const_t<std::remove_reference_t<T>>>>> {
-public:
-    template <class... Args>
-    std::enable_if_t<
-        std::is_constructible_v<T, Args&&...>,
-    maybe<T>>
-    replace(Args&&... args) & {
-        auto old = static_cast<maybe<T>*>(this)->as_ref().cloned();
-        static_cast<maybe<T>*>(this)->storage_.template emplace<just_t<T>>(std::in_place, std::forward<Args>(args)...);
-        return old;
-    }
-
-    template <class F, class... Args>
-    std::enable_if_t<
-        std::conjunction_v<
-            std::is_invocable<F, Args&&...>,
-            std::is_constructible<T, std::invoke_result_t<F&&, Args&&...>>>,
-    maybe<T>>
-    replace_with(F&& f, Args&&... args) & {
-        auto old = static_cast<maybe<T>*>(this)->as_ref().cloned();
-        static_cast<maybe<T>*>(this)->storage_.template emplace<just_t<T>>(std::invoke(std::forward<F>(f), std::forward<Args>(args)...));
-        return old;
-    }
-};
-
-template <class T>
+    requires (std::is_object_v<std::remove_cvref_t<T>>)
+          && (std::negation_v<std::is_array<std::remove_cvref_t<T>>>)
 class maybe
-    : public maybe_unwrap_or_default_injector<maybe<T>>
-    , public maybe_flatten_injector<maybe<T>>
-    , public maybe_cloned_injector<maybe<T>>
-    , public maybe_replace_injector<maybe<T>>
 {
     std::variant<nothing_t, just_t<T>> storage_;
     template<class, class> friend class maybe_replace_injector;
@@ -167,51 +60,39 @@ class maybe
     template <std::constructible_from<T> U> requires (!pointer_like<U>)
     maybe(U&& u) : storage_(std::in_place_type<just_t<T>>, std::in_place, std::forward<U>(u)) {}
 
-    template <class... Args,
-        std::enable_if_t<
-            std::is_constructible_v<T, Args&&...>,
-        bool> = false>
+    template <class... Args>
+        requires std::constructible_from<T, Args&&...>
     explicit maybe(std::in_place_t, Args&&... args)
         : storage_(std::in_place_type<just_t<T>>, std::in_place, std::forward<Args>(args)...) {}
 
-    template <class U, class... Args,
-        std::enable_if_t<
-            std::is_constructible_v<T, std::initializer_list<U>, Args&&...>,
-        bool> = false>
+    template <class U, class... Args>
+        requires std::constructible_from<T, std::initializer_list<U>, Args&&...>
     explicit maybe(std::in_place_t, std::initializer_list<U> il, Args&&... args)
         : storage_(std::in_place_type<just_t<T>>, std::in_place, il, std::forward<Args>(args)...) {}
 
-    template <class... Args,
-        std::enable_if_t<
-            std::is_constructible_v<T, Args...>,
-        bool> = false>
+    template <class... Args>
+        requires std::constructible_from<T, Args&&...>
     maybe(just_t<_just_detail::forward_mode<T>, Args...>&& fwd)
         : maybe()
     {
         std::apply([&](auto&&... args){ storage_.template emplace<just_t<T>>(std::in_place, std::forward<decltype(args)>(args)...); }, std::move(fwd)());
     }
 
-    template <class... Args,
-        std::enable_if_t<
-            std::is_constructible_v<T, Args...>,
-        bool> = false>
+    template <class... Args>
+        requires std::constructible_from<T, Args&&...>
     maybe(just_t<_just_detail::forward_mode<>, Args...>&& fwd)
         : maybe()
     {
         std::apply([&](auto&&... args){ storage_.template emplace<just_t<T>>(std::in_place, std::forward<decltype(args)>(args)...); }, std::move(fwd)());
     }
 
-    template <class U,
-        std::enable_if_t<
-            std::is_constructible_v<T, U const&>,
-        bool> = false>
+    template <class U>
+        requires std::constructible_from<T, U const&>
     maybe(just_t<U> const& j)
         : storage_(std::in_place_type<just_t<T>>, std::in_place, j.get()) {}
 
-    template <class U,
-        std::enable_if_t<
-            std::is_constructible_v<T, U&&>,
-        bool> = false>
+    template <class U>
+        requires std::constructible_from<T, U&&>
     maybe(just_t<U>&& j)
         : storage_(std::in_place_type<just_t<T>>, std::in_place, std::move(j).get()) {}
 
@@ -267,10 +148,8 @@ class maybe
     }
 
     template <class... Args>
-    std::enable_if_t<
-        std::is_constructible_v<T, Args&&...>,
-    value_type&>
-    get_or_emplace(Args&&... args) & {
+        requires std::constructible_from<T, Args&&...>
+    auto& get_or_emplace(Args&&... args) & {
         return is_just()
             ? unwrap()
             : (storage_.template emplace<just_t<T>>(std::in_place, std::forward<Args>(args)...), unwrap());
@@ -286,6 +165,53 @@ class maybe
         return is_just()
             ? unwrap()
             : (storage_.template emplace<just_t<T>>(std::in_place, std::invoke(std::forward<F>(f), std::forward<Args>(args)...)), unwrap());
+    }
+
+    template <class... Args>
+        requires std::copy_constructible<T>
+              && std::constructible_from<T, Args&&...>
+    constexpr maybe replace(Args&&... args) & {
+        auto old = static_cast<maybe<T>*>(this)->as_ref().cloned();
+        static_cast<maybe<T>*>(this)->storage_.template emplace<just_t<T>>(std::in_place, std::forward<Args>(args)...);
+        return old;
+    }
+
+    template <class F, class... Args>
+        requires std::copy_constructible<T>
+              && std::invocable<F&&, Args&&...>
+              && std::constructible_from<T, std::invoke_result_t<F, Args&&...>>
+    constexpr maybe replace_with(F&& f, Args&&... args) & {
+        auto old = static_cast<maybe<T>*>(this)->as_ref().cloned();
+        static_cast<maybe<T>*>(this)->storage_.template emplace<just_t<T>>(std::invoke(std::forward<F>(f), std::forward<Args>(args)...));
+        return old;
+    }
+
+    maybe<std::remove_reference_t<T>> cloned()
+        requires (std::is_lvalue_reference_v<T>)
+              && std::copy_constructible<T>
+    {
+        auto decay_copy = [](auto&& some) -> std::remove_const_t<std::remove_reference_t<T>> { return std::forward<decltype(some)>(some); };
+        return static_cast<maybe<T>const*>(this)->is_just()
+            ? maybe<std::remove_reference_t<T>>{just(decay_copy(static_cast<maybe<T>const*>(this)->unwrap()))}
+            : nothing;
+    }
+
+    auto flatten() const&
+        requires (is_maybe<std::decay_t<T>>::value)
+        { return is_just() ? unwrap().as_ref().cloned() : nothing; }
+
+    // Since C++20, enable initialize aggregates from a parenthesized list of values;
+    // http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0960r3.html
+    /// @brief
+    ///   Returns the contained value or a default.
+    ///
+    /// @note
+    ///   Consumes the self argument then,
+    ///   if just, returns the contained value,
+    ///   otherwise; if nothing, returns the default value for that type.
+    T unwrap_or_default() const requires (std::default_constructible<T>)
+    {
+        return is_just() ? unwrap() : T();
     }
 
     template <class U>
@@ -796,7 +722,7 @@ class maybe
 template <class T> requires (!pointer_like<T> && !is_just<T>::value)
 maybe(T&&) -> maybe<T>;
 template <pointer_like T>
-maybe(T&&) -> maybe<typename mitamagic::element_type<std::decay_t<T>>::type>;
+maybe(T&&) -> maybe<deref_type_t<std::decay_t<T>>>;
 
 template <class T, class U>
 std::enable_if_t<meta::is_comparable_with<T, U>::value,
