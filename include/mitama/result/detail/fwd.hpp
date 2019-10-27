@@ -90,6 +90,10 @@ struct is_ok_type : std::false_type {};
 template <class T>
 struct is_ok_type<success<T>> : std::true_type {};
 
+struct [[nodiscard]] nothing_t {};
+
+inline constexpr nothing_t nothing{};
+
 } // !namespace mitama
 
 

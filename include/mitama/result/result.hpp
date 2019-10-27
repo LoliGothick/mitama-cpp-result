@@ -5,6 +5,9 @@
 #include <mitama/panic.hpp>
 #include <mitama/result/factory/success.hpp>
 #include <mitama/result/factory/failure.hpp>
+#include <mitama/result/detail/dangling.hpp>
+#include <mitama/concepts/dereferencable.hpp>
+#include <mitama/maybe/fwd/maybe_fwd.hpp>
 
 #include <boost/hana/functional/overload.hpp>
 #include <boost/hana/functional/overload_linearly.hpp>
@@ -17,8 +20,6 @@
 #include <type_traits>
 #include <utility>
 #include <string_view>
-
-#include <mitama/result/detail/result_impl.hpp>
 
 namespace mitama {
 
@@ -34,10 +35,6 @@ class [[nodiscard]] basic_result<_mutability, T, E,
     std::negation<std::is_array<meta::remove_cvr_t<T>>>,
     std::negation<std::is_array<meta::remove_cvr_t<E>>>
   >>
-  : /* method injection selectors */ 
-  public unwrap_or_default_friend_injector<basic_result<_mutability, T, E>>,
-  public transpose_friend_injector<basic_result<_mutability, T, E>>,
-  public indirect_friend_injector<basic_result<_mutability, T, E>>
 {
   /// result storage
   std::variant<success<T>, failure<E>> storage_;
@@ -650,6 +647,231 @@ public:
   }
 
   /// @brief
+  ///   Converts from basic_result<T, E> &` to basic_result< <T as Deref>::Target&, E&>.
+  ///
+  /// @constrains
+  ///   T: dereferencable
+  ///
+  /// @note
+  ///   Leaves the original basic_result in-place,
+  ///   creating a new one with a reference to the original one,
+  ///   additionally coercing the success arm of the basic_result via `operator*`.
+  constexpr auto indirect_ok() & requires (dereferencable<T>) {
+    using indirect_ok_result = basic_result<_mutability, std::remove_reference_t<deref_type_t<T>>&, std::remove_reference_t<E>&>;
+    if ( is_ok() ) {
+      return indirect_ok_result{in_place_ok, *unwrap()};
+    }
+    else {
+      return indirect_ok_result{in_place_err, unwrap_err()};
+    }
+  }
+
+  /// @brief
+  ///   Converts from basic_result<T, E> &` to basic_result<T::Target const&, E const&>.
+  ///
+  /// @constrains
+  ///   T: dereferencable
+  ///
+  /// @note
+  ///   Leaves the original basic_result in-place,
+  ///   creating a new one with a reference to the original one,
+  ///   additionally coercing the success arm of the basic_result via `operator*`.
+  constexpr auto indirect_ok() const& requires (dereferencable<T>) {
+    using const_indirect_ok_result = basic_result<_mutability, meta::remove_cvr_t<deref_type_t<T>> const&, meta::remove_cvr_t<E> const&>;
+    if ( is_ok() ) {
+      return const_indirect_ok_result{in_place_ok, *unwrap()};
+    }
+    else {
+      return const_indirect_ok_result{in_place_err, unwrap_err()};
+    }
+  }
+
+  /// @brief
+  ///   Converts from basic_result<T, E> &` to basic_result<dangling<T::Target&>, dangling<E&>>.
+  ///
+  /// @constrains
+  ///   T: dereferencable
+  ///
+  /// @note
+  ///   Leaves the original basic_result in-place,
+  ///   creating a new one with a reference to the original one,
+  ///   additionally coercing the success arm of the basic_result via `operator*`.
+  ///
+  /// @warning
+  ///   Contained reference may be exhausted because of original result is rvalue.
+  constexpr auto indirect_ok() && requires (dereferencable<T>) {
+    using dangling_indirect_ok_result = basic_result<_mutability, dangling<std::reference_wrapper<std::remove_reference_t<deref_type_t<T>>>>, dangling<std::reference_wrapper<std::remove_reference_t<E>>>>;
+    if ( is_ok() ) {
+      return dangling_indirect_ok_result{in_place_ok, std::ref(*unwrap())};
+    }
+    else {
+      return dangling_indirect_ok_result{in_place_err, unwrap_err()};
+    }
+  }
+
+  constexpr void indirect_ok() const&& = delete;
+
+  /// @brief
+  ///   Converts from basic_result<T, E> &` to basic_result<T&, E::Target&>.
+  ///
+  /// @constrains
+  ///   (E e) { *e }
+  ///
+  /// @note
+  ///   Leaves the original basic_result in-place,
+  ///   creating a new one with a reference to the original one,
+  ///   additionally coercing the failure arm of the basic_result via `operator*`.
+  constexpr auto indirect_err() & requires (dereferencable<E>) {
+    using indirect_err_result = basic_result<_mutability, std::remove_reference_t<T>&, std::remove_reference_t<deref_type_t<E>>&>;
+    if ( is_ok() ) {
+      return indirect_err_result{in_place_ok, unwrap()};
+    }
+    else {
+      return indirect_err_result{in_place_err, *unwrap_err()};
+    }
+  }
+
+  /// @brief
+  ///   Converts from basic_result<T, E> &` to basic_result<T const&, E::Target const&>.
+  ///
+  /// @constrains
+  ///   (E e) { *e }
+  ///
+  /// @note
+  ///   Leaves the original basic_result in-place,
+  ///   creating a new one with a reference to the original one,
+  ///   additionally coercing the failure arm of the basic_result via `operator*`.
+  constexpr auto indirect_err() const& requires (dereferencable<E>) {
+    using const_indirect_err_result = basic_result<_mutability, meta::remove_cvr_t<T> const&, meta::remove_cvr_t<deref_type_t<E>> const&>;
+    if ( is_ok() ) {
+      return const_indirect_err_result{in_place_ok, unwrap()};
+    }
+    else {
+      return const_indirect_err_result{in_place_err, *unwrap_err()};
+    }
+  }
+
+  /// @brief
+  ///   Converts from basic_result<T, E> &` to basic_result<dangling<T&>, dangling<E::Target&>>.
+  ///
+  /// @constrains
+  ///   (E e) { *e }
+  ///
+  /// @note
+  ///   Leaves the original basic_result in-place,
+  ///   creating a new one with a reference to the original one,
+  ///   additionally coercing the failure arm of the basic_result via `operator*`.
+  ///
+  /// @warning
+  ///   Contained reference may be exhausted because of original result is rvalue.
+  constexpr auto indirect_err() && requires (dereferencable<E>) {
+    using dangling_indirect_err_result = basic_result<_mutability, dangling<std::remove_reference_t<T>&>, dangling<std::reference_wrapper<std::remove_reference_t<deref_type_t<E>>>>>;
+    if ( is_ok() ) {
+      return dangling_indirect_err_result{in_place_ok, unwrap()};
+    }
+    else {
+      return dangling_indirect_err_result{in_place_err, std::ref(*unwrap_err())};
+    }
+  }
+
+  constexpr void indirect_err() const&& = delete;
+
+  /// @brief
+  ///   Converts from basic_result<T, E> &` to basic_result<T::Target&, E::Target&>.
+  ///
+  /// @constrains
+  ///   (T t) { *t };
+  ///   (E e) { *e }
+  ///
+  /// @note
+  ///   Leaves the original basic_result in-place,
+  ///   creating a new one with a reference to the original one,
+  ///   additionally coercing the success and failure arm of the basic_result via `operator*`.
+  constexpr auto indirect() & requires (dereferencable<E> && dereferencable<E>) {
+    using indirect_result = basic_result<_mutability, std::remove_reference_t<deref_type_t<T>>&, std::remove_reference_t<deref_type_t<E>>&>;
+    if ( is_ok() ) {
+      return indirect_result{in_place_ok, *unwrap()};
+    }
+    else {
+      return indirect_result{in_place_err, *unwrap_err()};
+    }
+  }
+
+  /// @brief
+  ///   Converts from basic_result<T, E> &` to basic_result<T::Target const&, E::Target const&>.
+  ///
+  /// @constrains
+  ///   (T t) { *t };
+  ///   (E e) { *e }
+  ///
+  /// @note
+  ///   Leaves the original basic_result in-place,
+  ///   creating a new one with a reference to the original one,
+  ///   additionally coercing the success and failure arm of the basic_result via `operator*`.
+  constexpr auto indirect() const& requires (dereferencable<E> && dereferencable<E>) {
+    using const_indirect_result = basic_result<_mutability, meta::remove_cvr_t<deref_type_t<T>> const&, meta::remove_cvr_t<deref_type_t<E>> const&>;
+    if ( is_ok() ) {
+      return const_indirect_result{in_place_ok, *unwrap()};
+    }
+    else {
+      return const_indirect_result{in_place_err, *unwrap_err()};
+    }
+  }
+
+  /// @brief
+  ///   Converts from basic_result<T, E> &` to basic_result<dangling<T::Target&>, dangling<E::Target&>>.
+  ///
+  /// @constrains
+  ///   (T t) { *t };
+  ///   (E e) { *e }
+  ///
+  /// @note
+  ///   Leaves the original basic_result in-place,
+  ///   creating a new one with a reference to the original one,
+  ///   additionally coercing the success and failure arm of the basic_result via `operator*`.
+  ///
+  /// @warning
+  ///   Contained reference may be exhausted because of original result is rvalue.
+  constexpr auto indirect() && requires (dereferencable<E> && dereferencable<E>) {
+    using dangling_indirect_result = basic_result<_mutability, dangling<std::reference_wrapper<std::remove_reference_t<deref_type_t<T>>>>, dangling<std::reference_wrapper<std::remove_reference_t<deref_type_t<E>>>>>;
+    if ( is_ok() ) {
+      return dangling_indirect_result{in_place_ok, std::ref(*unwrap())};
+    }
+    else {
+      return dangling_indirect_result{in_place_err, std::ref(*unwrap_err())};
+    }
+  }
+
+  constexpr void indirect() const&& = delete;
+
+  /// @brief
+  ///   Returns the contained value or a default.
+  ///
+  /// @constraints
+  ///   T: requires (is_maybe<T>::value)
+  ///
+  /// @note
+  ///   Consumes the self argument then,
+  ///   if success, returns the contained value,
+  ///   otherwise; if failure, returns the default value for that type.
+  constexpr auto
+  transpose() const& requires (is_maybe<T>::value)
+  {
+    using return_type = maybe<basic_result<_mutability ,typename std::remove_cvref_t<T>::value_type, E>>;
+    if (is_ok()) {
+      if (auto const& may = unwrap()) {
+        return return_type{std::in_place, in_place_ok, may.unwrap()};
+      }
+      else {
+        return return_type{mitama::nothing};
+      }
+    }
+    else {
+      return return_type{std::in_place, in_place_err, unwrap_err()};
+    }
+  }
+
+  /// @brief
   ///   Unwraps a result, yielding the content of an success.
   ///   Else, it returns optb.
   ///
@@ -701,6 +923,20 @@ public:
   {
     return is_ok() ? std::move(std::get<success<T>>(storage_).get())
                    : std::forward<decltype(optb)>(optb);
+  }
+
+  // Since C++20, enable initialize aggregates from a parenthesized list of values;
+  // http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0960r3.html
+  /// @brief
+  ///   Returns the contained value or a default.
+  ///
+  /// @note
+  ///   Consumes the self argument then,
+  ///   if success, returns the contained value,
+  ///   otherwise; if Err, returns the default value for that type.
+  T unwrap_or_default() const requires (std::default_constructible<T>)
+  {
+    return is_ok() ? unwrap() : T();
   }
 
   /// @brief
@@ -1220,161 +1456,145 @@ public:
 
 };
 
-  template <mutability _, class T, class E, class U>
+  template <mutability _, class T, class E, std::equality_comparable_with<T> U>
   std::enable_if_t<
     std::negation_v<
       std::disjunction<
         is_result<std::decay_t<U>>,
         is_ok_type<std::decay_t<U>>,
-        is_err_type<std::decay_t<U>>>>
-    && is_comparable_with<T, U>::value,
+        is_err_type<std::decay_t<U>>>>,
   bool>
   operator==(basic_result<_, T, E> const& lhs, U&& rhs) {
     return lhs == success(std::forward<U>(rhs));
   }
 
-  template <mutability _, class T, class E, class U>
+  template <mutability _, class T, class E, std::equality_comparable_with<T> U>
   std::enable_if_t<
     std::negation_v<
       std::disjunction<
         is_result<std::decay_t<T>>,
         is_ok_type<std::decay_t<T>>,
-        is_err_type<std::decay_t<T>>>>
-    && is_comparable_with<T, U>::value,
+        is_err_type<std::decay_t<T>>>>,
   bool>
   operator==(T&& lhs, basic_result<_, U, E> const& rhs) {
     return success(std::forward<T>(lhs)) == rhs;
   }
 
-  template <mutability _, class T, class E, class U>
+  template <mutability _, class T, class E, std::equality_comparable_with<T> U>
   std::enable_if_t<
     std::negation_v<
       std::disjunction<
         is_result<std::decay_t<U>>,
         is_ok_type<std::decay_t<U>>,
-        is_err_type<std::decay_t<U>>>>
-    && is_comparable_with<T, U>::value,
+        is_err_type<std::decay_t<U>>>>,
   bool>
   operator!=(basic_result<_, T, E> const& lhs, U&& rhs) {
     return lhs != success(std::forward<U>(rhs));
   }
 
-  template <mutability _, class T, class E, class U>
+  template <mutability _, class T, class E, std::equality_comparable_with<T> U>
   std::enable_if_t<
     std::negation_v<
       std::disjunction<
         is_result<std::decay_t<T>>,
         is_ok_type<std::decay_t<T>>,
-        is_err_type<std::decay_t<T>>>>
-    && is_comparable_with<T, U>::value,
+        is_err_type<std::decay_t<T>>>>,
   bool>
   operator!=(T&& lhs, basic_result<_, U, E> const& rhs) {
     return success(std::forward<T>(lhs)) != rhs;
   }
 
-  template <mutability _, class T, class E, class U>
+  template <mutability _, class T, class E, std::totally_ordered_with<T> U>
   std::enable_if_t<
     std::negation_v<
       std::disjunction<
         is_result<std::decay_t<U>>,
         is_ok_type<std::decay_t<U>>,
-        is_err_type<std::decay_t<U>>>>
-    && meta::is_less_comparable_with<T, U>::value,
+        is_err_type<std::decay_t<U>>>>,
   bool>
   operator<(basic_result<_, T, E> const& lhs, U&& rhs) {
     return lhs < success(std::forward<U>(rhs));
   }
 
-  template <mutability _, class T, class E, class U>
+  template <mutability _, class T, class E, std::totally_ordered_with<T> U>
   std::enable_if_t<
     std::negation_v<
       std::disjunction<
         is_result<std::decay_t<T>>,
         is_ok_type<std::decay_t<T>>,
-        is_err_type<std::decay_t<T>>>>
-    && meta::is_less_comparable_with<T, U>::value,
+        is_err_type<std::decay_t<T>>>>,
   bool>
   operator<(T&& lhs, basic_result<_, U, E> const& rhs) {
     return success(std::forward<T>(lhs)) < rhs;
   }
 
-  template <mutability _, class T, class E, class U>
+  template <mutability _, class T, class E, std::totally_ordered_with<T> U>
   std::enable_if_t<
     std::negation_v<
       std::disjunction<
         is_result<std::decay_t<U>>,
         is_ok_type<std::decay_t<U>>,
-        is_err_type<std::decay_t<U>>>>
-    && meta::is_less_comparable_with<T, U>::value
-    && is_comparable_with<T, U>::value,
+        is_err_type<std::decay_t<U>>>>,
   bool>
   operator<=(basic_result<_, T, E> const& lhs, U&& rhs) {
     return lhs <= success(std::forward<U>(rhs));
   }
 
-  template <mutability _, class T, class E, class U>
+  template <mutability _, class T, class E, std::totally_ordered_with<T> U>
   std::enable_if_t<
     std::negation_v<
       std::disjunction<
         is_result<std::decay_t<T>>,
         is_ok_type<std::decay_t<T>>,
-        is_err_type<std::decay_t<T>>>>
-    && meta::is_less_comparable_with<T, U>::value
-    && is_comparable_with<T, U>::value,
+        is_err_type<std::decay_t<T>>>>,
   bool>
   operator<=(T&& lhs, basic_result<_, U, E> const& rhs) {
     return success(std::forward<T>(lhs)) <= rhs;
   }
 
-  template <mutability _, class T, class E, class U>
+  template <mutability _, class T, class E, std::totally_ordered_with<T> U>
   std::enable_if_t<
     std::negation_v<
       std::disjunction<
         is_result<std::decay_t<U>>,
         is_ok_type<std::decay_t<U>>,
-        is_err_type<std::decay_t<U>>>>
-    && meta::is_less_comparable_with<U, T>::value,
+        is_err_type<std::decay_t<U>>>>,
   bool>
   operator>(basic_result<_, T, E> const& lhs, U&& rhs) {
     return lhs > success(std::forward<U>(rhs));
   }
 
-  template <mutability _, class T, class E, class U>
+  template <mutability _, class T, class E, std::totally_ordered_with<T> U>
   std::enable_if_t<
     std::negation_v<
       std::disjunction<
         is_result<std::decay_t<T>>,
         is_ok_type<std::decay_t<T>>,
-        is_err_type<std::decay_t<T>>>>
-    && meta::is_less_comparable_with<U, T>::value,
+        is_err_type<std::decay_t<T>>>>,
   bool>
   operator>(T&& lhs, basic_result<_, U, E> const& rhs) {
     return success(std::forward<T>(lhs)) > rhs;
   }
 
-  template <mutability _, class T, class E, class U>
+  template <mutability _, class T, class E, std::totally_ordered_with<T> U>
   std::enable_if_t<
     std::negation_v<
       std::disjunction<
         is_result<std::decay_t<U>>,
         is_ok_type<std::decay_t<U>>,
-        is_err_type<std::decay_t<U>>>>
-    && meta::is_less_comparable_with<U, T>::value
-    && is_comparable_with<U, T>::value,
+        is_err_type<std::decay_t<U>>>>,
   bool>
   operator>=(basic_result<_, T, E> const& lhs, U&& rhs) {
     return lhs >= success(std::forward<U>(rhs));
   }
 
-  template <mutability _, class T, class E, class U>
+  template <mutability _, class T, class E, std::totally_ordered_with<T> U>
   std::enable_if_t<
     std::negation_v<
       std::disjunction<
         is_result<std::decay_t<T>>,
         is_ok_type<std::decay_t<T>>,
-        is_err_type<std::decay_t<T>>>>
-    && meta::is_less_comparable_with<U, T>::value
-    && is_comparable_with<U, T>::value,
+        is_err_type<std::decay_t<T>>>>,
   bool>
   operator>=(T&& lhs, basic_result<_, U, E> const& rhs) {
     return success(std::forward<T>(lhs)) >= rhs;

@@ -22,10 +22,6 @@ namespace mitama::_just_detail {
 
 namespace mitama {
 
-struct [[nodiscard]] nothing_t {};
-
-inline constexpr nothing_t nothing{};
-
 constexpr bool operator==(const nothing_t, const nothing_t) { return true; }
 constexpr bool operator!=(const nothing_t, const nothing_t) { return false; }
 constexpr bool operator< (const nothing_t, const nothing_t) { return false; }

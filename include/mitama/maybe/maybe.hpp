@@ -37,18 +37,6 @@ struct element_type {
 
 namespace mitama {
 
-template <class>
-struct is_maybe: std::false_type {};
-
-template <class T>
-struct is_maybe<maybe<T>>: std::true_type {};
-
-template <class, class>
-struct is_maybe_with: std::false_type {};
-
-template <class T>
-struct is_maybe_with<maybe<T>, T>: std::true_type {};
-
 template <class T, class=void>
 class maybe_unwrap_or_default_injector {
 public:
