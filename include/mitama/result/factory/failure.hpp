@@ -18,7 +18,7 @@ namespace mitama {
 /// class failure:
 /// The main use of this class is to propagate unsuccessful results to the constructor of the result class.
 template <class E>
-class [[nodiscard]] failure
+class [[nodiscard("warning: unused result which must be used")]] failure
 {
   template <class>
   friend class failure;
@@ -247,7 +247,7 @@ public:
 
 
 template <class E>
-class [[nodiscard]] failure<E&>
+class [[nodiscard("warning: unused result which must be used")]] failure<E&>
 {
   template <class>
   friend class failure;

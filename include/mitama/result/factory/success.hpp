@@ -18,7 +18,7 @@ namespace mitama {
 /// class success:
 /// The main use of this class is to propagate successful results to the constructor of the result class.
 template <class T>
-class [[nodiscard]] success
+class [[nodiscard("warning: unused result which must be used")]] success
 {
   template <class>
   friend class success;
@@ -242,7 +242,7 @@ public:
 };
 
 template <class T>
-class [[nodiscard]] success<T&>
+class [[nodiscard("warning: unused result which must be used")]] success<T&>
 {
   template <class>
   friend class success;

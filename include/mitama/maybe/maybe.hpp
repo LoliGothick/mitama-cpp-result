@@ -34,7 +34,7 @@ namespace mitama {
 template <class T>
     requires (std::is_object_v<std::remove_cvref_t<T>>)
           && (std::negation_v<std::is_array<std::remove_cvref_t<T>>>)
-class maybe
+class [[nodiscard("warning: unused result which must be used")]] maybe
 {
     std::variant<nothing_t, just_t<T>> storage_;
     template<class, class> friend class maybe_replace_injector;
@@ -422,19 +422,19 @@ class maybe
                 : result_t{in_place_err, this->unwrap().unwrap_err()};
     }
 
-    constexpr and_finally(std::invocable<value_type&> auto&& f) & {
+    constexpr decltype(auto) and_finally(std::invocable<value_type&> auto&& f) & {
         if (is_just()) std::invoke(std::forward<decltype(f)>(f), unwrap());
     }
 
-    constexpr and_finally(std::invocable<value_type const&> auto&& f) & {
+    constexpr decltype(auto) and_finally(std::invocable<value_type const&> auto&& f) const& {
         if (is_just()) std::invoke(std::forward<decltype(f)>(f), unwrap());
     }
 
-    constexpr and_finally(std::invocable<T&&> auto&& f) & {
+    constexpr decltype(auto) and_finally(std::invocable<T&&> auto&& f) && {
         if (is_just()) std::invoke(std::forward<decltype(f)>(f), static_cast<T&&>(unwrap()));
     }
 
-    constexpr or_finally(std::invocable auto&& f) {
+    constexpr decltype(auto) or_finally(std::invocable auto&& f) {
         if (is_nothing()) std::invoke(std::forward<decltype(f)>(f));
     }
 

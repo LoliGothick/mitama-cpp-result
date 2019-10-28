@@ -32,7 +32,7 @@ template <mutability _mutability, class T, class E>
         && (std::is_object_v<std::remove_cvref_t<E>>)
         && (std::negation_v<std::is_array<std::remove_cvref_t<T>>>)
         && (std::negation_v<std::is_array<std::remove_cvref_t<E>>>)
-class [[nodiscard]] basic_result
+class [[nodiscard("warning: unused result which must be used")]] basic_result
 {
   /// result storage
   std::variant<success<T>, failure<E>> storage_;
