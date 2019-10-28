@@ -364,108 +364,56 @@ class maybe
         else return failure{std::invoke(std::forward<decltype(err)>(err))};
     }
 
-    template <class U>
-    maybe<U> conj(maybe<U> const& rhs) const {
-        return is_just() ? rhs : nothing;
+    constexpr auto conj(decay_satisfy<is_maybe> auto&& rhs) const {
+        return is_just() ? std::forward<decltype(rhs)>(rhs) : nothing;
     }
 
     template <class U>
-    maybe<U> operator&&(maybe<U> const& rhs) const {
+    constexpr maybe<U> operator&&(maybe<U> const& rhs) const {
         return this->conj(rhs);
     }
 
-    maybe<T> disj(maybe<T> const& rhs) const {
+    constexpr maybe<T> disj(maybe<T> const& rhs) const {
         return is_nothing() ? rhs : *this;
     }
 
-    maybe<T> operator||(maybe<T> const& rhs) const {
+    constexpr maybe<T> operator||(maybe<T> const& rhs) const {
         return this->disj(rhs);
     }
 
-    maybe<T> xdisj(maybe<T> const& rhs) const {
-        return is_just() ^ rhs.is_just()
-            ? is_just() ? *this
-                        : rhs
-                        : nothing;
+    constexpr maybe<T> xdisj(maybe<T> const& rhs) const {
+        return is_just() ^ rhs.is_just() ? is_just() ? *this : rhs : nothing;
     }
 
-    maybe<T> operator^(maybe<T> const& rhs) const {
+    constexpr maybe<T> operator^(maybe<T> const& rhs) const {
         return this->xdisj(rhs);
     }
 
-    template <class F>
-    std::enable_if_t<
-        std::conjunction_v<
-            std::is_invocable<F&&, T&>,
-            is_maybe<std::decay_t<std::invoke_result_t<F&&, T&>>>>,
-    std::invoke_result_t<F&&, T&> >
-    and_then(F&& f) & {
-        return is_just()
-            ? std::invoke(std::forward<F>(f), unwrap())
-            : nothing;
+    constexpr auto and_then(std::regular_invocable<T&> auto&& f) & requires (is_maybe<std::decay_t<std::invoke_result_t<decltype(f), T&>>>::value) {
+        return is_just() ? std::invoke(std::forward<decltype(f)>(f), unwrap()) : nothing;
     }
 
-    template <class F>
-    std::enable_if_t<
-        std::conjunction_v<
-            std::is_invocable<F&&, T const&>,
-            is_maybe<std::decay_t<std::invoke_result_t<F&&, T const&>>>>,
-    std::invoke_result_t<F&&, T const&> >
-    and_then(F&& f) const& {
-        return is_just()
-            ? std::invoke(std::forward<F>(f), unwrap())
-            : nothing;
+    constexpr auto and_then(std::regular_invocable<T const&> auto&& f) const& requires (is_maybe<std::decay_t<std::invoke_result_t<decltype(f), T const&>>>::value) {
+        return is_just() ? std::invoke(std::forward<decltype(f)>(f), unwrap()) : nothing;
     }
 
-    template <class F>
-    std::enable_if_t<
-        std::conjunction_v<
-            std::is_invocable<F&&, T&>,
-            is_maybe<std::decay_t<std::invoke_result_t<F&&, T&&>>>>,
-    std::invoke_result_t<F&&, T&> >
-    and_then(F&& f) && {
-        return is_just()
-            ? std::invoke(std::forward<F>(f), std::move(unwrap()))
-            : nothing;
+    constexpr auto and_then(std::regular_invocable<T&&> auto&& f) && requires (is_maybe<std::decay_t<std::invoke_result_t<decltype(f), T&&>>>::value) {
+        return is_just() ? std::invoke(std::forward<decltype(f)>(f), static_cast<T&&>(unwrap())) : nothing;
     }
 
-    template <class F>
-    std::enable_if_t<
-        std::conjunction_v<
-            std::is_invocable<F&&>,
-            is_maybe_with<std::decay_t<std::invoke_result_t<F&&>>, T>>,
-    maybe>
-    or_else(F&& f) & {
-        return is_just()
-            ? just(unwrap())
-            : std::invoke(std::forward<F>(f));
+    constexpr auto or_else(std::regular_invocable auto&& f) & requires (is_maybe_with<std::decay_t<std::invoke_result_t<decltype(f)>>, T>::value) {
+        return is_just() ? just(unwrap()) : std::invoke(std::forward<decltype(f)>(f));
     }
 
-    template <class F>
-    std::enable_if_t<
-        std::conjunction_v<
-            std::is_invocable<F&&>,
-            is_maybe_with<std::decay_t<std::invoke_result_t<F&&>>, T>>,
-    maybe>
-    or_else(F&& f) const& {
-        return is_just()
-            ? just(unwrap())
-            : std::invoke(std::forward<F>(f));
+    constexpr auto or_else(std::regular_invocable auto&& f) const& requires (is_maybe_with<std::decay_t<std::invoke_result_t<decltype(f)>>, T>::value) {
+        return is_just() ? just(unwrap()) : std::invoke(std::forward<decltype(f)>(f));
     }
 
-    template <class F>
-    std::enable_if_t<
-        std::conjunction_v<
-            std::is_invocable<F&&>,
-            is_maybe_with<std::decay_t<std::invoke_result_t<F&&>>, T>>,
-    maybe>
-    or_else(F&& f) && {
-        return is_just()
-            ? just(std::move(unwrap()))
-            : std::invoke(std::forward<F>(f));
+    constexpr auto or_else(std::regular_invocable auto&& f) && requires (is_maybe_with<std::decay_t<std::invoke_result_t<decltype(f)>>, T>::value) {
+        return is_just() ? just(static_cast<T&&>(unwrap())) : std::invoke(std::forward<decltype(f)>(f));
     }
 
-    auto transpose() const& requires (is_result_v<std::decay_t<T>>) {
+    constexpr auto transpose() const& requires (is_result_v<std::decay_t<T>>) {
         using result_t = basic_result<std::decay_t<T>::mutability_v, maybe<typename std::decay_t<T>::ok_type>, typename std::decay_t<T>::err_type>;
         return this->is_nothing()
             ? result_t{success{nothing}}
@@ -474,46 +422,20 @@ class maybe
                 : result_t{in_place_err, this->unwrap().unwrap_err()};
     }
 
-    template <class F>
-    std::enable_if_t<std::is_invocable_v<F&&, value_type&>>
-    and_finally(F&& f) & {
-        if (is_just())
-            std::invoke(std::forward<F>(f), unwrap());
+    constexpr and_finally(std::invocable<value_type&> auto&& f) & {
+        if (is_just()) std::invoke(std::forward<decltype(f)>(f), unwrap());
     }
 
-    template <class F>
-    std::enable_if_t<std::is_invocable_v<F&&, value_type const&>>
-    and_finally(F&& f) const& {
-        if (is_just())
-            std::invoke(std::forward<F>(f), unwrap());
+    constexpr and_finally(std::invocable<value_type const&> auto&& f) & {
+        if (is_just()) std::invoke(std::forward<decltype(f)>(f), unwrap());
     }
 
-    template <class F>
-    std::enable_if_t<std::is_invocable_v<F&&, value_type&&>>
-    and_finally(F&& f) && {
-        if (is_just())
-            std::invoke(std::forward<F>(f), std::move(unwrap()));
+    constexpr and_finally(std::invocable<T&&> auto&& f) & {
+        if (is_just()) std::invoke(std::forward<decltype(f)>(f), static_cast<T&&>(unwrap()));
     }
 
-    template <class F>
-    std::enable_if_t<std::is_invocable_v<F&&>>
-    or_finally(F&& f) & {
-        if (is_nothing())
-            std::invoke(std::forward<F>(f));
-    }
-
-    template <class F>
-    std::enable_if_t<std::is_invocable_v<F&&>>
-    or_finally(F&& f) const& {
-        if (is_nothing())
-            std::invoke(std::forward<F>(f));
-    }
-
-    template <class F>
-    std::enable_if_t<std::is_invocable_v<F&&>>
-    or_finally(F&& f) && {
-        if (is_nothing())
-            std::invoke(std::forward<F>(f));
+    constexpr or_finally(std::invocable auto&& f) {
+        if (is_nothing()) std::invoke(std::forward<decltype(f)>(f));
     }
 
     template <class F>

@@ -6,6 +6,9 @@ namespace mitama {
 template <class T, template <class> class Pred >
 concept satisfy = Pred<T>::value;
 
+template <class T, template <class> class Pred >
+concept decay_satisfy = Pred<std::decay_t<T>>::value;
+
 }
 
 #endif
