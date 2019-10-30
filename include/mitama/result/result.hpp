@@ -156,34 +156,34 @@ public:
 
   /// @brief
   ///   explicit constructor for successful lvalue
-  template <class U> requires std::constructible_from<T, U>
-  constexpr explicit(!std::convertible_to<U, T>)
+  template <class U> requires std::constructible_from<T, const U&>
+  constexpr explicit(!std::convertible_to<const U&, T>)
   basic_result(success<U> const& ok)
     : storage_{std::in_place_type<success<T>>, std::in_place, ok.get()}
   {}
 
   /// @brief
   ///   explicit constructor for successful rvalue
-  template <class U> requires std::constructible_from<T, U>
-  constexpr /*explicit(!std::convertible_to<U, T>)*/
-  basic_result(success<U> && ok)
-    : storage_{std::in_place_type<success<T>>, std::move(ok)}
+  template <class U> requires std::constructible_from<T, U&&>
+  constexpr explicit(!std::convertible_to<U&&, T>)
+  basic_result(success<U>&& ok)
+    : storage_{std::in_place_type<success<T>>, std::in_place, static_cast<U&&>(ok.get())}
   {}
 
   /// @brief
   ///   non-explicit constructor for unsuccessful lvalue
-  template <class F> requires std::constructible_from<E, F>
-  constexpr explicit(!std::convertible_to<F, E>)
+  template <class F> requires std::constructible_from<E, F const&>
+  constexpr explicit(!std::convertible_to<F const&, E>)
   basic_result(failure<F> const& err)
     : storage_{std::in_place_type<failure<E>>, std::in_place, err.get()}
   {}
 
   /// @brief
   ///   non-explicit constructor for unsuccessful rvalue
-  template <class F> requires std::constructible_from<E, F>
-  constexpr explicit(!std::convertible_to<F, E>)
+  template <class F> requires std::constructible_from<E, F&&>
+  constexpr explicit(!std::convertible_to<F&&, E>)
   basic_result(failure<F>&& err)
-    : storage_{std::in_place_type<failure<E>>, std::move(err)}
+    : storage_{std::in_place_type<failure<E>>, std::in_place, static_cast<F&&>(err.get())}
   {}
 
   constexpr basic_result(success<>)

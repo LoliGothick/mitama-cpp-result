@@ -576,7 +576,7 @@ SCENARIO("test for as_mut", "[result][as_mut]"){
   using namespace std::literals;
   GIVEN( "A new result, containing a reference into the original" ) {
     auto ptr = std::make_shared<str>("foo"s);
-    mut_result<Rc<str>, Rc<str>> res(success<Rc<str>>{ptr});
+    mut_result<Rc<str>, Rc<str>> res = success{ptr};
     auto ref /* result<str const&, str const&> */ = res.as_mut();
 
     REQUIRE( res == success(ptr) );

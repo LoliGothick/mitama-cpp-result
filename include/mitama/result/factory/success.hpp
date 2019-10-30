@@ -13,6 +13,7 @@
 #include <type_traits>
 #include <utility>
 #include <mitama/concepts/display.hpp>
+#include <concepts>
 
 namespace mitama {
 /// class success:
@@ -20,8 +21,7 @@ namespace mitama {
 template <class T>
 class [[nodiscard("warning: unused result which must be used")]] success
 {
-  template <class>
-  friend class success;
+  template <class> friend class success;
   T x;
 
   template <class... Requires>
@@ -34,55 +34,30 @@ class [[nodiscard("warning: unused result which must be used")]] success
 public:
   using ok_type = T;
 
-  template <class U = T>
-  constexpr success(std::enable_if_t<std::is_same_v<std::monostate, U>, std::nullptr_t> = nullptr)
-  { /* whatever */ }
+  constexpr success() requires std::same_as<T, std::monostate> = default;
 
-  template <class U,
-            where<not_self<std::decay_t<U>>,
-                  std::is_constructible<T, U>,
-                  std::is_convertible<U, T>> = required>
-  constexpr success(U&&  u) noexcept(std::is_nothrow_constructible_v<T, U>)
+  template <std::constructible_from<T> U> requires (!std::same_as<std::remove_cvref_t<U>, success>)
+  constexpr explicit(!std::convertible_to<U&&, T>)
+  success(U&& u)
+      noexcept(std::is_nothrow_constructible_v<T, U&&>)
       : x(std::forward<U>(u)) {}
 
-  template <class U,
-            where<not_self<std::decay_t<U>>,
-                  std::is_constructible<T, U>,
-                  std::negation<std::is_convertible<U, T>>> = required>
-  explicit constexpr success(U&&  u) noexcept(std::is_nothrow_constructible_v<T, U>)
-      : x(std::forward<U>(u)) {}
-
-  template <typename U,
-            where<std::negation<std::is_same<T, U>>,
-                  std::is_constructible<T, const U &>,
-                  std::is_convertible<const U &, T>> = required>
-  constexpr success(const success<U> &t) noexcept(std::is_nothrow_constructible_v<T, U>)
+  template <std::constructible_from<T> U> requires (!std::same_as<std::remove_cvref_t<U>, success>)
+  constexpr explicit(!std::convertible_to<U const&, T>)
+  success(const success<U> &t)
+      noexcept(std::is_nothrow_constructible_v<T, U const&>)
       : x(t.get()) {}
 
-  template <typename U,
-            where<std::negation<std::is_same<T, U>>,
-                  std::is_constructible<T, const U &>,
-                  std::negation<std::is_convertible<const U &, T>>> = required>
-  explicit constexpr success(const success<U> &t) noexcept(std::is_nothrow_constructible_v<T, U>)
-      : x(t.get()) {}
+  template <std::constructible_from<T> U> requires (!std::same_as<std::remove_cvref_t<U>, success>)
+  constexpr explicit(!std::convertible_to<U&&, T>)
+  success(success<U>&& t)
+      noexcept(std::is_nothrow_constructible_v<T, U&&>)
+      : x(static_cast<U&&>(t.get())) {}
 
-  template <typename U,
-            where<std::negation<std::is_same<T, U>>,
-                  std::is_constructible<T, U&&>,
-                  std::is_convertible<U&&, T>> = required>
-  constexpr success(success<U> && t) noexcept(std::is_nothrow_constructible_v<T, U>)
-      : x(std::move(t.get())) {}
-
-  template <typename U,
-            where<std::negation<std::is_same<T, U>>,
-                  std::is_constructible<T, U&&>,
-                  std::negation<std::is_convertible<U&&, T>>> = required>
-  explicit constexpr success(success<U> && t) noexcept(std::is_nothrow_constructible_v<T, U>)
-      : x(std::move(t.get())) {}
-
-  template <class... Args,
-            where<std::is_constructible<T, Args...>> = required>
-  explicit constexpr success(std::in_place_t, Args && ... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
+  template <class... Args> requires (std::constructible_from<T, Args&&...>)
+  explicit constexpr
+  success(std::in_place_t, Args&&... args)
+      noexcept(std::is_nothrow_constructible_v<T, Args...>)
       : x(std::forward<Args>(args)...) {}
 
   template <mutability _mut, class T_, class E_>

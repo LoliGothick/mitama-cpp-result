@@ -319,7 +319,7 @@ public:
   constexpr auto operator()(Args const&... args) const
   {
     static_assert(
-      std::conjunction_v<is_invocable_constrait<MatchSequence, Args...>...>,
+      std::disjunction_v<is_invocable_constrait<MatchSequence, Args...>...>,
       "Error: non-invocable match arm(s) exist.");
     return std::apply(fix{[&, args...]([[maybe_unused]] auto f, auto first, auto... rest)
           -> std::conditional_t<

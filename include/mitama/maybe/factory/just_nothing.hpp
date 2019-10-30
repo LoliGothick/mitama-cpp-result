@@ -58,20 +58,18 @@ public:
 
     constexpr just_t() requires std::same_as<T, std::monostate> = default;
 
-    template <class U>
-    constexpr
-    explicit(!(std::constructible_from<T, U> && std::convertible_to<U, T>))
+    template <std::constructible_from<T> U> requires (!std::same_as<U, just_t>)
+    constexpr explicit(!(std::constructible_from<T, U> && std::convertible_to<U, T>))
     just_t(U&& u)
         noexcept(std::is_nothrow_constructible_v<T, U>)
-        requires (!std::same_as<U, just_t>)
         : x(std::forward<U>(u)) {}
 
-    template <class U> requires (!std::same_as<T, U>)
+    template <std::constructible_from<T> U> requires (!std::same_as<T, U>)
     explicit(!(std::constructible_from<T, U> && std::convertible_to<U, T>))
     constexpr just_t(const just_t<U> &t) noexcept(std::is_nothrow_constructible_v<T, const U&>)
         : x(t.get()) {}
 
-    template <class U> requires (!std::same_as<T, U>)
+    template <std::constructible_from<T> U> requires (!std::same_as<T, U>)
     explicit(!(std::constructible_from<T, U> && std::convertible_to<U, T>))
     constexpr just_t(just_t<U> &&t) noexcept(std::is_nothrow_constructible_v<T, U&&>)
         : x(static_cast<U&&>(t.get())) {}
