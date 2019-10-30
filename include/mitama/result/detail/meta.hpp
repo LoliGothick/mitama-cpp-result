@@ -26,27 +26,6 @@ template < class T > struct force_add_const<T&> { using type = std::add_const_t<
 template < class T > struct force_add_const<T&&> { using type = std::add_const_t<T>&&; };
 template < class T > using force_add_const_t = typename force_add_const<T>::type;
 
-
-template <class, class = void>
-struct is_comparable : std::false_type {};
-template <class T>
-struct is_comparable<T, std::void_t<decltype(std::declval<T const& >() == std::declval<T const &>())>> : std::true_type {};
-
-template <class, class, class = void>
-struct is_comparable_with : std::false_type {};
-template <class T, class U>
-struct is_comparable_with<T, U, std::void_t<decltype(std::declval<T const& >() == std::declval<U const &>())>> : std::true_type {};
-
-template <class, class = void>
-struct is_less_comparable : std::false_type {};
-template <class T>
-struct is_less_comparable<T, std::void_t<decltype(std::declval<T const& >() < std::declval<T const &>())>> : std::true_type {};
-
-template <class, class, class = void>
-struct is_less_comparable_with : std::false_type {};
-template <class T, class U>
-struct is_less_comparable_with<T, U, std::void_t<decltype(std::declval<T const& >() < std::declval<U const &>())>> : std::true_type {};
-
 }}
 
 namespace mitama {

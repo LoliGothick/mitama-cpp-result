@@ -28,5 +28,11 @@ struct is_maybe_with: std::false_type {};
 template <class T>
 struct is_maybe_with<maybe<T>, T>: std::true_type {};
 
+template <class>
+struct not_maybe: std::true_type {};
+
+template <class T>
+struct not_maybe<maybe<T>>: std::false_type {};
+
 }
 #endif
