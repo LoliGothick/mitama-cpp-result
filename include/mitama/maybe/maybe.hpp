@@ -58,7 +58,10 @@ class [[nodiscard("warning: unused result which must be used")]] maybe
     }
 
     template <std::constructible_from<T> U> requires (!pointer_like<U>)
-    constexpr maybe(U&& u) : storage_(std::in_place_type<just_t<T>>, std::in_place, std::forward<U>(u)) {}
+    constexpr explicit(!std::convertible_to<T, U>)
+    maybe(U&& u)
+        noexcept(std::is_nothrow_constructible_v<T, U&&>)
+        : storage_(std::in_place_type<just_t<T>>, std::in_place, std::forward<U>(u)) {}
 
     template <class... Args>
         requires std::constructible_from<T, Args&&...>
@@ -89,12 +92,14 @@ class [[nodiscard("warning: unused result which must be used")]] maybe
     template <class U>
         requires std::constructible_from<T, U const&>
     constexpr maybe(just_t<U> const& j)
+        noexcept(std::is_nothrow_constructible_v<T, U const&>)
         : storage_(std::in_place_type<just_t<T>>, std::in_place, j.get()) {}
 
     template <class U>
         requires std::constructible_from<T, U&&>
     constexpr maybe(just_t<U>&& j)
-        : storage_(std::in_place_type<just_t<T>>, std::in_place, std::move(j).get()) {}
+        noexcept(std::is_nothrow_constructible_v<T, U&&>)
+        : storage_(std::in_place_type<just_t<T>>, std::in_place, static_cast<U&&>(j.get())) {}
 
     constexpr explicit operator bool() const {
         return is_just();
