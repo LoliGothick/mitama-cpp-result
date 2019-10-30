@@ -43,7 +43,7 @@ TEST_CASE("unwrap()", "[maybe][unwrap]"){
     sregex re =
         as_xpr(
             "runtime panicked at 'called `maybe::unwrap()` on a `nothing` value', ") >>
-        *_ >> as_xpr(":") >> +range('0', '9');
+        *_ >> as_xpr(":") >> +boost::xpressive::range('0', '9');
     smatch what;
     REQUIRE(regex_match(std::string{p.what()}, what, re));
   }
@@ -64,7 +64,7 @@ TEST_CASE("expect()", "[maybe][expect]"){
     sregex re =
         as_xpr(
             "runtime panicked at 'the world is ending', ") >>
-        *_ >> as_xpr(":") >> +range('0', '9');
+        *_ >> as_xpr(":") >> +boost::xpressive::range('0', '9');
     smatch what;
     REQUIRE(regex_match(std::string{p.what()}, what, re));
   }
