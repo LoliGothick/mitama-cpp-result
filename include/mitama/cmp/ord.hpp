@@ -4,6 +4,8 @@
 #include <compare>
 #include <mitama/result/detail/fwd.hpp>
 
+namespace mitama::detail { struct _empty {}; }
+
 namespace mitama::cmp {
 
 template <class T, class U>

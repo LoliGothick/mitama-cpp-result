@@ -13,6 +13,7 @@
 #include <mitama/concepts/pointer_like.hpp>
 #include <mitama/concepts/dereferencable.hpp>
 #include <mitama/concepts/satisfy.hpp>
+#include <mitama/cmp/ord.hpp>
 
 #include <fmt/core.h>
 #include <boost/hana/functional/fix.hpp>
@@ -36,6 +37,10 @@ template <class T>
     requires (std::is_object_v<std::remove_cvref_t<T>>)
           && (std::negation_v<std::is_array<std::remove_cvref_t<T>>>)
 class [[nodiscard("warning: unused result which must be used")]] maybe
+  : public cmp::ord<maybe<T>, maybe>
+  , public cmp::ord<maybe<T>, just_t>
+  , public cmp::rel<maybe<T>, nothing_t>
+  , public std::conditional_t<is_nothing_v<T>, detail::_empty, cmp::rel<maybe<T>, T>>
 {
     std::variant<nothing_t, just_t<T>> storage_;
     template<class, class> friend class maybe_replace_injector;
@@ -533,163 +538,42 @@ class [[nodiscard("warning: unused result which must be used")]] maybe
         return std::move(*this);
     }
 
+  template <std::totally_ordered_with<T> U>
+  constexpr std::strong_ordering operator<=>(maybe<U> const& other) const {
+    if (this->is_just() && other.is_nothing()) return std::strong_ordering::greater;
+    else if (this->is_nothing() && other.is_just()) return std::strong_ordering::less;
+    else if (this->is_just() && other.is_just()) {
+      if (this->unwrap() < other.unwrap()) return std::strong_ordering::less;
+      if (this->unwrap() > other.unwrap()) return std::strong_ordering::greater;
+      else return std::strong_ordering::equivalent;
+    }
+    else {
+      return std::strong_ordering::equivalent;
+    }
+  }
+
+  template <std::totally_ordered_with<T> U>
+  constexpr std::strong_ordering operator<=>(just_t<U> const& other) const {
+    if (this->is_nothing()) return std::strong_ordering::less;
+    else {
+      if (this->unwrap() < other.get()) return std::strong_ordering::less;
+      if (this->unwrap() > other.get()) return std::strong_ordering::greater;
+      else return std::strong_ordering::equivalent;
+    }
+  }
+
+  constexpr std::strong_ordering operator<=>(nothing_t const& other) const
+  { return this->is_nothing() ? std::strong_ordering::equivalent : std::strong_ordering::greater; }
+
+  constexpr std::strong_ordering operator<=>(value_type const& other) const
+  { return *this <=> just(other); }
+
 };
 
 template <class T> requires (!pointer_like<T> && !is_just<T>::value)
 maybe(T&&) -> maybe<T>;
 template <pointer_like T>
 maybe(T&&) -> maybe<deref_type_t<std::decay_t<T>>>;
-
-template <class T, std::equality_comparable_with<T> U>
-constexpr bool operator==(maybe<T> const& lhs, maybe<U> const& rhs) {
-    return lhs && rhs && (lhs.unwrap() == rhs.unwrap());
-}
-
-template <class T>
-constexpr bool operator==(maybe<T> const& lhs, const nothing_t) {
-    return lhs.is_nothing();
-}
-
-template <class T>
-constexpr bool operator==(const nothing_t, maybe<T> const& rhs) {
-    return rhs.is_nothing();
-}
-
-template <decay_satisfy<not_maybe> U, std::equality_comparable_with<U> T>
-constexpr bool operator==(maybe<T> const& lhs, U&& rhs) {
-    return lhs == just(std::forward<U>(rhs));
-}
-
-template <decay_satisfy<not_maybe> T, std::equality_comparable_with<T> U>
-constexpr bool operator==(T&& lhs, maybe<U> const& rhs) {
-    return just(std::forward<T>(lhs)) == rhs;
-}
-
-template <class T, std::equality_comparable_with<T> U>
-constexpr bool operator!=(maybe<T> const& lhs, maybe<U> const& rhs) {
-    return !(lhs == rhs);
-}
-
-template <class T>
-constexpr bool operator!=(maybe<T> const& lhs, const nothing_t) {
-    return lhs.is_just();
-}
-
-template <class T>
-constexpr bool operator!=(const nothing_t, maybe<T> const& rhs) {
-    return rhs.is_just();
-}
-
-template <decay_satisfy<not_maybe> U, std::equality_comparable_with<U> T>
-constexpr bool operator!=(maybe<T> const& lhs, U&& rhs) {
-    return lhs != just(std::forward<U>(rhs));
-}
-
-template <decay_satisfy<not_maybe> T, std::equality_comparable_with<T> U>
-constexpr bool operator!=(T&& lhs, maybe<U> const& rhs) {
-    return just(std::forward<T>(lhs)) != rhs;
-}
-
-template <class T, std::totally_ordered_with<T> U>
-constexpr bool operator<(maybe<T> const& lhs, maybe<U> const& rhs) {
-    return lhs.ok_or() < rhs.ok_or();
-}
-
-template <class T>
-constexpr bool operator<(nothing_t, maybe<T> const& rhs) {
-    return rhs.is_just();
-}
-
-template <class T>
-constexpr bool operator<(maybe<T> const&, nothing_t) {
-    return false;
-}
-
-template <decay_satisfy<not_maybe> U, std::totally_ordered_with<U> T>
-constexpr bool operator<(maybe<T> const& lhs, U&& rhs) {
-    return lhs < just(std::forward<U>(rhs));
-}
-
-template <decay_satisfy<not_maybe> T, std::totally_ordered_with<T> U>
-constexpr bool operator<(T&& lhs, maybe<U> const& rhs) {
-    return just(std::forward<T>(lhs)) < rhs;
-}
-
-template <class T, std::totally_ordered_with<T> U>
-constexpr bool operator<=(maybe<T> const& lhs, maybe<U> const& rhs) {
-    return lhs.ok_or() <= rhs.ok_or();
-}
-
-template <class T>
-constexpr bool operator<=(nothing_t, maybe<T> const&) {
-    return true;
-}
-
-template <class T>
-constexpr bool operator<=(maybe<T> const& lhs, nothing_t) {
-    return lhs.is_nothing();
-}
-
-template <decay_satisfy<not_maybe> U, std::totally_ordered_with<U> T>
-constexpr bool operator<=(maybe<T> const& lhs, U&& rhs) {
-    return lhs <= just(std::forward<U>(rhs));
-}
-
-template <decay_satisfy<not_maybe> T, std::totally_ordered_with<T> U>
-constexpr bool operator<=(T&& lhs, maybe<U> const& rhs) {
-    return just(std::forward<T>(lhs)) <= rhs;
-}
-
-template <class T, std::totally_ordered_with<T> U>
-constexpr bool operator>(maybe<T> const& lhs, maybe<U> const& rhs) {
-    return lhs.ok_or() > rhs.ok_or();
-}
-
-template <class T>
-constexpr bool operator>(nothing_t, maybe<T> const&) {
-    return false;
-}
-
-template <class T>
-constexpr bool operator>(maybe<T> const& lhs, nothing_t) {
-    return lhs.is_just();
-}
-
-template <decay_satisfy<not_maybe> U, std::totally_ordered_with<U> T>
-constexpr bool operator>(maybe<T> const& lhs, U&& rhs) {
-    return lhs > just(std::forward<U>(rhs));
-}
-
-template <decay_satisfy<not_maybe> T, std::totally_ordered_with<T> U>
-constexpr bool operator>(T&& lhs, maybe<U> const& rhs) {
-    return just(std::forward<T>(lhs)) > rhs;
-}
-
-template <class T, std::totally_ordered_with<T> U>
-constexpr bool operator>=(maybe<T> const& lhs, maybe<U> const& rhs) {
-    return lhs.ok_or() >= rhs.ok_or();
-}
-
-template <class T>
-constexpr bool operator>=(nothing_t, maybe<T> const& rhs) {
-    return rhs.is_nothing();
-}
-
-template <class T>
-constexpr bool operator>=(maybe<T> const&, nothing_t) {
-    return true;
-}
-
-template <decay_satisfy<not_maybe> U, std::totally_ordered_with<U> T>
-constexpr bool operator>=(maybe<T> const& lhs, U&& rhs) {
-    return lhs >= just(std::forward<U>(rhs));
-}
-
-template <decay_satisfy<not_maybe> T, std::totally_ordered_with<T> U>
-constexpr bool operator>=(T&& lhs, maybe<U> const& rhs) {
-    return just(std::forward<T>(lhs)) >= rhs;
-}
-
 
 /// @brief
 ///   ostream output operator for maybe<T>

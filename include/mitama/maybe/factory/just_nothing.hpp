@@ -6,6 +6,7 @@
 #include <mitama/result/traits/impl_traits.hpp>
 #include <mitama/concepts/display.hpp>
 #include <mitama/concepts/satisfy.hpp>
+#include <mitama/cmp/ord.hpp>
 
 #include <fmt/core.h>
 
@@ -27,13 +28,6 @@ namespace mitama::_just_detail {
 
 namespace mitama {
 
-constexpr bool operator==(const nothing_t, const nothing_t) { return true; }
-constexpr bool operator!=(const nothing_t, const nothing_t) { return false; }
-constexpr bool operator< (const nothing_t, const nothing_t) { return false; }
-constexpr bool operator> (const nothing_t, const nothing_t) { return false; }
-constexpr bool operator<=(const nothing_t, const nothing_t) { return true; }
-constexpr bool operator>=(const nothing_t, const nothing_t) { return true; }
-
 inline std::ostream& operator<<(std::ostream& os, nothing_t) { return os << "nothing"; }
 
 template <class>
@@ -52,6 +46,10 @@ struct is_just_with<just_t<T>, T>: std::true_type {};
 /// The main use of this class is to propagate some value to the constructor of the maybe class.
 template <class T>
 class [[nodiscard("warning: unused result which must be used")]] just_t<T>
+    : public cmp::ord<just_t<T>, maybe>
+    , public cmp::ord<just_t<T>, just_t>
+    , public cmp::rel<just_t<T>, nothing_t>
+    , public std::conditional_t<is_nothing_v<T>, detail::_empty, cmp::rel<just_t<T>, T>>
 {
     template <class...> friend class just_t;
     T x;
@@ -86,137 +84,31 @@ public:
         noexcept(std::is_nothrow_constructible_v<T, std::initializer_list<U>, Args&&...>)
         : x(il, std::forward<Args>(args)...) {}
 
-    friend constexpr bool
-    operator==(const nothing_t, just_t const&) { return false; }
-
-    friend constexpr bool
-    operator==(just_t const&, const nothing_t) { return false; }
-
-    template <std::equality_comparable_with<T> U>
-    constexpr bool
-    operator==(just_t<U> const& rhs) const {
-        return this->x == rhs.get();
-    }
-
-    template <std::equality_comparable_with<T> U>
-    friend bool
-    operator==(maybe<U> const& lhs, just_t const& rhs) {
-        return lhs && (lhs.unwrap() == rhs.get());
-    }
-
-    template <std::equality_comparable_with<T> U>
-    friend bool
-    operator==(just_t const& lhs, maybe<U> const& rhs) {
-        return rhs && (lhs.get() == rhs.unwrap());
-    }
-
-    friend constexpr bool
-    operator!=(const nothing_t , just_t const&) { return true; }
-
-    friend constexpr bool
-    operator!=(just_t const&, const nothing_t) { return true; }
-
-    template <std::equality_comparable_with<T> U>
-    constexpr bool
-    operator!=(just_t<U> const& rhs) const{
-        return !(this->x == rhs.get());
-    }
-
-    template <std::equality_comparable_with<T> U>
-    friend bool
-    operator!=(maybe<U> const& lhs, just_t const& rhs) {
-        return lhs && !(lhs.unwrap() == rhs);
-    }
-
-    template <std::equality_comparable_with<T> U>
-    friend bool
-    operator!=(just_t const& lhs, maybe<U> const& rhs) {
-        return rhs && !(lhs == rhs.unwrap());
-    }
-
-    friend constexpr bool
-    operator<(const nothing_t , just_t const&) { return true; }
-
-    friend constexpr bool
-    operator<(just_t const&, const nothing_t) { return false; }
-
     template <std::totally_ordered_with<T> U>
-    constexpr bool
-    operator<(just_t<U> const& rhs) const{
-        return this->x < rhs.get();
+    constexpr std::strong_ordering operator<=>(maybe<U> const& other) const {
+        if (other.is_nothing()) return std::strong_ordering::greater;
+        else {
+            return this->get() < other.unwrap() ? std::strong_ordering::less :
+                   this->get() > other.unwrap() ? std::strong_ordering::greater :
+                                                  std::strong_ordering::equivalent;
+        }
     }
 
     template <std::totally_ordered_with<T> U>
-    friend constexpr bool
-    operator<(just_t const& lhs, maybe<U> const& rhs) {
-        return rhs ? lhs.get() < rhs.unwrap() : false;
+    constexpr std::strong_ordering operator<=>(just_t<U> const& other) const {
+        return this->get() < other.get() ? std::strong_ordering::less :
+               this->get() > other.get() ? std::strong_ordering::greater :
+                                           std::strong_ordering::equivalent;
     }
 
-    template <std::totally_ordered_with<T> U>
-    friend constexpr bool
-    operator<(maybe<U> const& lhs, just_t const& rhs) {
-        return lhs ? lhs.unwrap() < rhs.get() : true;
+    constexpr std::strong_ordering operator<=>(T const& other) const requires (!is_nothing_v<T>) {
+        return this->get() < other ? std::strong_ordering::less :
+               this->get() > other ? std::strong_ordering::greater :
+                                     std::strong_ordering::equivalent;
     }
 
-    friend constexpr bool
-    operator<=(const nothing_t , just_t const&) { return true; }
-
-    friend constexpr bool
-    operator<=(just_t const&, const nothing_t) { return false; }
-
-    template <std::totally_ordered_with<T> U>
-    constexpr bool
-    operator<=(just_t<U> const& rhs) const{
-        return this->x < rhs.get() || this->x == rhs.get() ;
-    }
-
-    template <std::totally_ordered_with<T> U>
-    friend constexpr bool
-    operator<=(just_t const& lhs, maybe<U> const& rhs) {
-        return rhs ? (lhs.get() < rhs.unwrap() || lhs.get() == rhs.unwrap()) : false;
-    }
-
-    template <std::totally_ordered_with<T> U>
-    friend constexpr bool
-    operator<=(maybe<U> const& lhs, just_t const& rhs) {
-        return lhs ? (lhs.unwrap() < rhs.get() || lhs.unwrap() == rhs.get()) : true;
-    }
-
-    friend constexpr bool
-    operator>(const nothing_t , just_t const&) { return false; }
-
-    friend constexpr bool
-    operator>(just_t const&, const nothing_t) { return true; }
-
-    template <std::totally_ordered_with<T> U>
-    constexpr bool
-    operator>(just_t<U> const& rhs) const{ return rhs < *this; }
-
-    template <std::totally_ordered_with<T> U>
-    friend constexpr bool
-    operator>(just_t const& lhs, maybe<U> const& rhs) { return rhs < lhs; }
-
-    template <std::totally_ordered_with<T> U>
-    friend constexpr bool
-    operator>(maybe<U> const& lhs, just_t const& rhs) { return rhs < lhs; }
-
-    friend constexpr bool
-    operator>=(const nothing_t , just_t const&) { return false; }
-
-    friend constexpr bool
-    operator>=(just_t const&, const nothing_t) { return true; }
-
-    template <std::totally_ordered_with<T> U>
-    constexpr bool
-    operator>=(just_t<U> const& rhs) const { return rhs <= *this; }
-
-    template <std::totally_ordered_with<T> U>
-    friend constexpr bool
-    operator>=(just_t const& lhs, maybe<U> const& rhs) { return rhs <= lhs; }
-
-    template <std::totally_ordered_with<T> U>
-    friend constexpr bool
-    operator>=(maybe<U> const& lhs, just_t const& rhs) { return rhs <= lhs; }
+    constexpr std::strong_ordering operator<=>(nothing_t const&) const 
+    { return std::strong_ordering::greater; }
 
     constexpr T& get() & { return x; }
     constexpr T const& get() const& { return x; }
@@ -225,6 +117,10 @@ public:
 
 template <class T>
 class [[nodiscard("warning: unused result which must be used")]] just_t<T&>
+    : public cmp::ord<just_t<T&>, maybe>
+    , public cmp::ord<just_t<T&>, just_t>
+    , public cmp::rel<just_t<T&>, nothing_t>
+    , public std::conditional_t<is_nothing_v<T>, detail::_empty, cmp::rel<just_t<T>, T>>
 {
     template <class...> friend class just_t;
     std::reference_wrapper<T> x;
@@ -246,141 +142,36 @@ public:
     constexpr just_t& operator=(just_t &&) = default;
     constexpr just_t& operator=(just_t const&) = default;
 
-    friend constexpr bool
-    operator==(const nothing_t, just_t const&) { return false; }
-
-    friend constexpr bool
-    operator==(just_t const&, const nothing_t) { return false; }
-
-    template <std::equality_comparable_with<T> U>
-    constexpr bool
-    operator==(just_t<U> const& rhs) const {
-        return this->x == rhs.get();
-    }
-
-    template <std::equality_comparable_with<T> U>
-    friend bool
-    operator==(maybe<U> const& lhs, just_t const& rhs) {
-        return lhs && (lhs.unwrap() == rhs.get());
-    }
-
-    template <std::equality_comparable_with<T> U>
-    friend bool
-    operator==(just_t const& lhs, maybe<U> const& rhs) {
-        return rhs && (lhs.get() == rhs.unwrap());
-    }
-
-    friend constexpr bool
-    operator!=(const nothing_t , just_t const&) { return true; }
-
-    friend constexpr bool
-    operator!=(just_t const&, const nothing_t) { return true; }
-
-    template <std::equality_comparable_with<T> U>
-    constexpr bool
-    operator!=(just_t<U> const& rhs) const{
-        return !(this->x == rhs.get());
-    }
-
-    template <std::equality_comparable_with<T> U>
-    friend bool
-    operator!=(maybe<U> const& lhs, just_t const& rhs) {
-        return lhs && !(lhs.unwrap() == rhs);
-    }
-
-    template <std::equality_comparable_with<T> U>
-    friend bool
-    operator!=(just_t const& lhs, maybe<U> const& rhs) {
-        return rhs && !(lhs == rhs.unwrap());
-    }
-
-    friend constexpr bool
-    operator<(const nothing_t , just_t const&) { return true; }
-
-    friend constexpr bool
-    operator<(just_t const&, const nothing_t) { return false; }
-
-    template <std::totally_ordered_with<T> U>
-    constexpr bool
-    operator<(just_t<U> const& rhs) const{
-        return this->x < rhs.get();
-    }
-
-    template <std::totally_ordered_with<T> U>
-    friend constexpr bool
-    operator<(just_t const& lhs, maybe<U> const& rhs) {
-        return rhs ? lhs.get() < rhs.unwrap() : false;
-    }
-
-    template <std::totally_ordered_with<T> U>
-    friend constexpr bool
-    operator<(maybe<U> const& lhs, just_t const& rhs) {
-        return lhs ? lhs.unwrap() < rhs.get() : true;
-    }
-
-    friend constexpr bool
-    operator<=(const nothing_t , just_t const&) { return true; }
-
-    friend constexpr bool
-    operator<=(just_t const&, const nothing_t) { return false; }
-
-    template <std::totally_ordered_with<T> U>
-    constexpr bool
-    operator<=(just_t<U> const& rhs) const{
-        return this->x < rhs.get() || this->x == rhs.get() ;
-    }
-
-    template <std::totally_ordered_with<T> U>
-    friend constexpr bool
-    operator<=(just_t const& lhs, maybe<U> const& rhs) {
-        return rhs ? (lhs.get() < rhs.unwrap() || lhs.get() == rhs.unwrap()) : false;
-    }
-
-    template <std::totally_ordered_with<T> U>
-    friend constexpr bool
-    operator<=(maybe<U> const& lhs, just_t const& rhs) {
-        return lhs ? (lhs.unwrap() < rhs.get() || lhs.unwrap() == rhs.get()) : true;
-    }
-
-    friend constexpr bool
-    operator>(const nothing_t , just_t const&) { return false; }
-
-    friend constexpr bool
-    operator>(just_t const&, const nothing_t) { return true; }
-
-    template <std::totally_ordered_with<T> U>
-    constexpr bool
-    operator>(just_t<U> const& rhs) const{ return rhs < *this; }
-
-    template <std::totally_ordered_with<T> U>
-    friend constexpr bool
-    operator>(just_t const& lhs, maybe<U> const& rhs) { return rhs < lhs; }
-
-    template <std::totally_ordered_with<T> U>
-    friend constexpr bool
-    operator>(maybe<U> const& lhs, just_t const& rhs) { return rhs < lhs; }
-
-    friend constexpr bool
-    operator>=(const nothing_t , just_t const&) { return false; }
-
-    friend constexpr bool
-    operator>=(just_t const&, const nothing_t) { return true; }
-
-    template <std::totally_ordered_with<T> U>
-    constexpr bool
-    operator>=(just_t<U> const& rhs) const { return rhs <= *this; }
-
-    template <std::totally_ordered_with<T> U>
-    friend constexpr bool
-    operator>=(just_t const& lhs, maybe<U> const& rhs) { return rhs <= lhs; }
-
-    template <std::totally_ordered_with<T> U>
-    friend constexpr bool
-    operator>=(maybe<U> const& lhs, just_t const& rhs) { return rhs <= lhs; }
-
     constexpr T& get() & { return x.get(); }
     constexpr T const& get() const& { return x.get(); }
     constexpr T& get() && { return x.get(); }
+
+    template <std::totally_ordered_with<T> U>
+    constexpr std::strong_ordering operator<=>(maybe<U> const& other) const {
+        if (other.is_nothing()) return std::strong_ordering::greater;
+        else {
+            return this->get() < other.unwrap() ? std::strong_ordering::less :
+                   this->get() > other.unwrap() ? std::strong_ordering::greater :
+                                                  std::strong_ordering::equivalent;
+        }
+    }
+
+    template <std::totally_ordered_with<T> U>
+    constexpr std::strong_ordering operator<=>(just_t<U> const& other) const {
+        return this->get() < other.get() ? std::strong_ordering::less :
+               this->get() > other.get() ? std::strong_ordering::greater :
+                                           std::strong_ordering::equivalent;
+    }
+
+    constexpr std::strong_ordering operator<=>(T const& other) const requires (!is_nothing_v<T>) {
+        return this->get() < other ? std::strong_ordering::less :
+               this->get() > other ? std::strong_ordering::greater :
+                                     std::strong_ordering::equivalent;
+    }
+
+    constexpr std::strong_ordering operator<=>(nothing_t const&) const
+    { return std::strong_ordering::greater; }
+
 };
 
 template <display T>

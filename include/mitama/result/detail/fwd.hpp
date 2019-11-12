@@ -93,9 +93,17 @@ struct is_ok_type : std::false_type {};
 template <class T>
 struct is_ok_type<success<T>> : std::true_type {};
 
-struct [[nodiscard]] nothing_t {};
+struct [[nodiscard]] nothing_t {
+    constexpr auto operator<=>(nothing_t const&) const = default;
+};
 
 inline constexpr nothing_t nothing{};
+
+template <class, class=void> struct is_nothing : std::false_type {};
+template <class T> struct is_nothing<T, std::enable_if_t<std::is_same_v<std::decay_t<T>, nothing_t>>>
+    : std::true_type {};
+
+template <class T> inline constexpr bool is_nothing_v = is_nothing<T>::value;
 
 } // !namespace mitama
 
