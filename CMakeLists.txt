@@ -7,6 +7,7 @@ set(CMAKE_CXX_FLAGS "-std=c++2a -w -pedantic-errors -ftemplate-backtrace-limit=0
 
 ## Set our project name
 project(mitama-cpp-result)
+message(${CMAKE_CXX_COMPILER})
 
 find_package(Boost 1.67.0 REQUIRED
   COMPONENTS

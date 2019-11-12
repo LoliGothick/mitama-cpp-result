@@ -13,7 +13,7 @@ executors:
       - image: enumack/mitama-env:<< parameters.compiler >>
 
 jobs:
-  full-test:
+  test:
     description: Testing the library using Catch2
     parameters:
       compiler:
@@ -27,22 +27,10 @@ jobs:
       - checkout
       - run: apt upgrade -y && apt update -y && apt install -y git
       - run: git submodule update --init --recursive
-      - run: |
-          mkdir -p build && cd build && cmake .. && cmake --build .
-          find -type f -name "*-tests" | bash
+      - run: ./build_and_test.sh
 
 workflows:
   build:
     jobs:
-      - full-test:
-          compiler: clang-8.0.0
-      - full-test:
-          compiler: clang-7.1.0
-      - full-test:
-          compiler: clang-7.0.1
-      - full-test:
-          compiler: clang-7.0.0
-      - full-test:
-          compiler: gcc-9.1
-      - full-test:
-          compiler: gcc-8.3
+      - test:
+          compiler: gcc-trunk-2019-11-12
