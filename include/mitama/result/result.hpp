@@ -37,6 +37,7 @@ class [[nodiscard("warning: unused result which must be used")]] basic_result
   : public cmp::result_ord<basic_result<_mutability, T, E>>
   , public cmp::ord<basic_result<_mutability, T, E>, success>
   , public cmp::ord<basic_result<_mutability, T, E>, failure>
+  , public cmp::rel<basic_result<_mutability, T, E>, T>
 {
   /// result storage
   std::variant<success<T>, failure<E>> storage_;
@@ -1323,77 +1324,10 @@ public:
       else return std::strong_ordering::equivalent;
     }
   }
+
+  constexpr std::strong_ordering operator<=>(ok_type const& other) const
+  { return *this <=> success(other); }
 };
-
-template <mutability _, std::totally_ordered T, class E>
-inline constexpr std::strong_ordering
-operator<=>(basic_result<_, T, E> const& lhs, typename basic_result<_, T, E>::ok_type const& rhs)
-{ return lhs <=> success(rhs); }
-
-template <mutability _, std::totally_ordered T, class E>
-inline constexpr std::strong_ordering
-operator<=>(typename basic_result<_, T, E>::ok_type const& lhs, basic_result<_, T, E> const& rhs)
-{ return success(lhs) <=> rhs; }
-
-template <mutability _, std::totally_ordered T, class E>
-inline constexpr bool
-operator==(basic_result<_, T, E> const& lhs, typename basic_result<_, T, E>::ok_type const& rhs)
-{ return (lhs <=> success(rhs)) == std::strong_ordering::equivalent; }
-
-template <mutability _, std::totally_ordered T, class E>
-inline constexpr bool
-operator==(typename basic_result<_, T, E>::ok_type const& lhs, basic_result<_, T, E> const& rhs)
-{ return (success(lhs) <=> rhs) == std::strong_ordering::equivalent; }
-
-template <mutability _, std::totally_ordered T, class E>
-inline constexpr bool
-operator!=(basic_result<_, T, E> const& lhs, typename basic_result<_, T, E>::ok_type const& rhs)
-{ return (lhs <=> success(rhs)) != std::strong_ordering::equivalent; }
-
-template <mutability _, std::totally_ordered T, class E>
-inline constexpr bool
-operator!=(typename basic_result<_, T, E>::ok_type const& lhs, basic_result<_, T, E> const& rhs)
-{ return (success(lhs) <=> rhs) != std::strong_ordering::equivalent; }
-
-template <mutability _, std::totally_ordered T, class E>
-inline constexpr bool
-operator<(basic_result<_, T, E> const& lhs, typename basic_result<_, T, E>::ok_type const& rhs)
-{ return (lhs <=> success(rhs)) == std::strong_ordering::less; }
-
-template <mutability _, std::totally_ordered T, class E>
-inline constexpr bool
-operator<(typename basic_result<_, T, E>::ok_type const& lhs, basic_result<_, T, E> const& rhs)
-{ return (success(lhs) <=> rhs) == std::strong_ordering::less; }
-
-template <mutability _, std::totally_ordered T, class E>
-inline constexpr bool
-operator<=(basic_result<_, T, E> const& lhs, typename basic_result<_, T, E>::ok_type const& rhs)
-{ return (lhs <=> success(rhs)) != std::strong_ordering::greater; }
-
-template <mutability _, std::totally_ordered T, class E>
-inline constexpr bool
-operator<=(typename basic_result<_, T, E>::ok_type const& lhs, basic_result<_, T, E> const& rhs)
-{ return (success(lhs) <=> rhs) != std::strong_ordering::greater; }
-
-template <mutability _, std::totally_ordered T, class E>
-inline constexpr bool
-operator>(basic_result<_, T, E> const& lhs, typename basic_result<_, T, E>::ok_type const& rhs)
-{ return (lhs <=> success(rhs)) == std::strong_ordering::greater; }
-
-template <mutability _, std::totally_ordered T, class E>
-inline constexpr bool
-operator>(typename basic_result<_, T, E>::ok_type const& lhs, basic_result<_, T, E> const& rhs)
-{ return (success(lhs) <=> rhs) == std::strong_ordering::greater; }
-
-template <mutability _, std::totally_ordered T, class E>
-inline constexpr bool
-operator>=(basic_result<_, T, E> const& lhs, typename basic_result<_, T, E>::ok_type const& rhs)
-{ return (lhs <=> success(rhs)) != std::strong_ordering::less; }
-
-template <mutability _, std::totally_ordered T, class E>
-inline constexpr bool
-operator>=(typename basic_result<_, T, E>::ok_type const& lhs, basic_result<_, T, E> const& rhs)
-{ return (success(lhs) <=> rhs) != std::strong_ordering::less; }
 
 } // namespace mitama
 

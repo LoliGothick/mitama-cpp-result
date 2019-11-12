@@ -5,6 +5,40 @@
 #include <mitama/result/detail/fwd.hpp>
 
 namespace mitama::cmp {
+
+template <class T, class U>
+struct rel {
+    friend bool operator==(const T& lhs, const U& rhs)
+    { return lhs.operator<=>(rhs) == std::strong_ordering::equivalent; }
+    friend bool operator==(const U& lhs, const T& rhs)
+    { return rhs.operator<=>(lhs) == std::strong_ordering::equivalent; }
+
+    friend bool operator!=(const T& lhs, const U& rhs)
+    { return lhs.operator<=>(rhs) != std::strong_ordering::equivalent; }
+    friend bool operator!=(const U& lhs, const T& rhs)
+    { return rhs.operator<=>(lhs) != std::strong_ordering::equivalent; }
+
+    friend bool operator<(const T& lhs, const U& rhs)
+    { return lhs.operator<=>(rhs) == std::strong_ordering::less; }
+    friend bool operator<(const U& lhs, const T& rhs)
+    { return rhs.operator<=>(lhs) == std::strong_ordering::greater; }
+
+    friend bool operator<=(const T& lhs, const U& rhs)
+    { return lhs.operator<=>(rhs) != std::strong_ordering::greater; }
+    friend bool operator<=(const U& lhs, const T& rhs)
+    { return rhs.operator<=>(lhs) != std::strong_ordering::less; }
+
+    friend bool operator>(const T& lhs, const U& rhs)
+    { return lhs.operator<=>(rhs) == std::strong_ordering::greater; }
+    friend bool operator>(const U& lhs, const T& rhs)
+    { return rhs.operator<=>(lhs) == std::strong_ordering::less; }
+
+    friend bool operator>=(const T& lhs, const U& rhs)
+    { return lhs.operator<=>(rhs) != std::strong_ordering::less; }
+    friend bool operator>=(const U& lhs, const T& rhs)
+    { return rhs.operator<=>(lhs) != std::strong_ordering::greater; }
+};
+
 template <class Lhs, template<class...> class Rhs>
 struct ord {
     template <class... Ts>
