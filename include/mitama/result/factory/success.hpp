@@ -4,9 +4,14 @@
 #include <mitama/result/detail/fwd.hpp>
 #include <mitama/result/detail/meta.hpp>
 #include <mitama/result/traits/impl_traits.hpp>
+#include <mitama/cmp/ord.hpp>
+
 #include <boost/hana/functional/fix.hpp>
 #include <boost/hana/functional/overload.hpp>
 #include <boost/hana/functional/overload_linearly.hpp>
+
+#include <fmt/core.h>
+
 #include <iostream>
 #include <string>
 #include <string_view>
@@ -20,6 +25,9 @@ namespace mitama {
 /// The main use of this class is to propagate successful results to the constructor of the result class.
 template <class T>
 class [[nodiscard("warning: unused result which must be used")]] success
+  : public cmp::result_ord<success<T>>
+  , public cmp::ord<success<T>, success>
+  , public cmp::ord<success<T>, failure>
 {
   template <class> friend class success;
   T x;
@@ -60,88 +68,39 @@ public:
       noexcept(std::is_nothrow_constructible_v<T, Args...>)
       : x(std::forward<Args>(args)...) {}
 
-  template <mutability _mut, std::equality_comparable_with<T> T_, class E_>
-  constexpr bool operator==(basic_result<_mut, T_, E_> const& rhs) const {
-    return rhs.is_ok() ? rhs.unwrap() == this->x : false;
-  }
-
-  template <std::equality_comparable_with<T> T_>
-  constexpr bool operator==(success<T_> const& rhs) const
-  { return this->x == rhs.x; }
-
-  template <class E_>
-  constexpr bool operator==(failure<E_> const&) const { return false; }
-
-  template <mutability _mut, std::equality_comparable_with<T> T_, class E_>
-  constexpr bool operator!=(basic_result<_mut, T_, E_> const& rhs) const {
-    return rhs.is_ok() ? !(rhs.unwrap() == this->x) : true;
-  }
-
-  template <std::equality_comparable_with<T> T_>
-  constexpr bool operator!=(success<T_> const& rhs) const
-  { return !(this->x == rhs.x); }
-
-  template <class E_>
-  constexpr bool
-  operator!=(failure<E_> const&) const { return true; }
-
-  template <mutability _mut, std::totally_ordered_with<T> T_, class E_>
-  constexpr bool operator<(basic_result<_mut, T_, E_> const& rhs) const {
-    return rhs.is_ok() ? this->x < rhs.unwrap() : false;
-  }
-
-  template <std::totally_ordered_with<T> T_>
-  constexpr bool operator<(success<T_> const& rhs) const
-  { return this->x < rhs.x; }
-
-  template <class E_>
-  constexpr bool operator<(failure<E_> const&) const { return false; }
-
-  template <mutability _mut, std::totally_ordered_with<T> T_, class E_>
-  constexpr bool operator<=(basic_result<_mut, T_, E_> const& rhs) const {
-    return rhs.is_ok() ? (this->x == rhs.unwrap()) || (this->x < rhs.unwrap()) : false;
-  }
-
-  template <std::totally_ordered_with<T> T_>
-  constexpr bool operator<=(success<T_> const& rhs) const {
-    return (this->x == rhs.x) || (this->x < rhs.x);
-  }
-
-  template <class E_>
-  constexpr bool operator<=(failure<E_> const&) const { return false; }
-
-  template <mutability _mut, std::totally_ordered_with<T> T_, class E_>
-  constexpr bool operator>(basic_result<_mut, T_, E_> const& rhs) const {
-    return rhs.is_ok() ? rhs.unwrap() < this->x : true;
-  }
-
-  template <std::totally_ordered_with<T> T_>
-  constexpr bool operator>(success<T_> const& rhs) const
-  { return rhs < *this; }
-
-  template <class E_>
-  constexpr bool operator>(failure<E_> const&) const { return true; }
-
-  template <mutability _mut, std::totally_ordered_with<T> T_, class E_>
-  constexpr bool operator>=(basic_result<_mut, T_, E_> const& rhs) const {
-    return rhs.is_ok() ? (rhs.unwrap() == this->x) || (rhs.is_ok() < this->x) : true;
-  }
-
-  template <std::totally_ordered_with<T> T_>
-  constexpr bool operator>=(success<T_> const& rhs) const
-  { return rhs <= *this; }
-
-  template <class E_>
-  constexpr bool operator>=(failure<E_> const&) const { return true; }
-
   constexpr T& get() & { return x; }
   constexpr T const& get() const& { return x; }
   constexpr T&& get() && { return std::move(x); }
+
+  template <mutability _, std::totally_ordered_with<T> U, class E>
+  constexpr std::strong_ordering operator<=>(basic_result<_, U, E> const& other) const {
+    if (other.is_err()) return std::strong_ordering::greater;
+    else {
+      if (this->get() < other.unwrap()) return std::strong_ordering::less;
+      if (this->get() > other.unwrap()) return std::strong_ordering::greater;
+      else return std::strong_ordering::equivalent;
+    }
+  }
+
+  template <std::totally_ordered_with<T> U>
+  constexpr std::strong_ordering operator<=>(success<U> const& other) const {
+    if (this->get() < other.get()) return std::strong_ordering::less;
+    if (this->get() > other.get()) return std::strong_ordering::greater;
+    else return std::strong_ordering::equivalent;
+  }
+
+  template <class E>
+  constexpr std::strong_ordering operator<=>(failure<E> const& other) const {
+    return std::strong_ordering::greater;
+  }
 
 };
 
 template <class T>
 class [[nodiscard("warning: unused result which must be used")]] success<T&>
+  : public cmp::result_ord<success<T&>>
+  , public cmp::ord<success<T&>, success>
+  , public cmp::ord<success<T&>, failure>
 {
   template <class>
   friend class success;
@@ -162,92 +121,40 @@ public:
   explicit constexpr success(std::in_place_t, T& ok) : x(ok) {}
 
   template <class Derived> requires (std::is_base_of_v<std::remove_cv_t<T>, std::remove_cv_t<Derived>>)
-  explicit constexpr success(Derived& derived) : x(derived) {}
+  explicit constexpr success(Derived& derived): x{derived} {}
   template <class Derived> requires (std::is_base_of_v<std::remove_cv_t<T>, std::remove_cv_t<Derived>>)
-  explicit constexpr success(std::in_place_t, Derived& derived) : x(derived) {}
+  explicit constexpr success(std::in_place_t, Derived& derived): x{derived} {}
 
   explicit constexpr success(success &&) = default;
   explicit constexpr success(success const&) = default;
   constexpr success& operator=(success &&) = default;
   constexpr success& operator=(success const&) = default;
 
-  template <mutability _mut, std::equality_comparable_with<T> T_, class E_>
-  constexpr bool operator==(basic_result<_mut, T_, E_> const& rhs) const {
-    return rhs.is_ok() ? rhs.unwrap() == this->x : false;
-  }
-
-  template <std::equality_comparable_with<T> T_>
-  constexpr bool operator==(success<T_> const& rhs) const
-  { return this->x == rhs.x; }
-
-  template <class E_>
-  constexpr bool operator==(failure<E_> const&) const { return false; }
-
-  template <mutability _mut, std::equality_comparable_with<T> T_, class E_>
-  constexpr bool operator!=(basic_result<_mut, T_, E_> const& rhs) const {
-    return rhs.is_ok() ? !(rhs.unwrap() == this->x) : true;
-  }
-
-  template <std::equality_comparable_with<T> T_>
-  constexpr bool operator!=(success<T_> const& rhs) const
-  { return !(this->x == rhs.x); }
-
-  template <class E_>
-  constexpr bool
-  operator!=(failure<E_> const&) const { return true; }
-
-  template <mutability _mut, std::totally_ordered_with<T> T_, class E_>
-  constexpr bool operator<(basic_result<_mut, T_, E_> const& rhs) const {
-    return rhs.is_ok() ? this->x < rhs.unwrap() : false;
-  }
-
-  template <std::totally_ordered_with<T> T_>
-  constexpr bool operator<(success<T_> const& rhs) const
-  { return this->x < rhs.x; }
-
-  template <class E_>
-  constexpr bool operator<(failure<E_> const&) const { return false; }
-
-  template <mutability _mut, std::totally_ordered_with<T> T_, class E_>
-  constexpr bool operator<=(basic_result<_mut, T_, E_> const& rhs) const {
-    return rhs.is_ok() ? (this->x == rhs.unwrap()) || (this->x < rhs.unwrap()) : false;
-  }
-
-  template <std::totally_ordered_with<T> T_>
-  constexpr bool operator<=(success<T_> const& rhs) const {
-    return (this->x == rhs.x) || (this->x < rhs.x);
-  }
-
-  template <class E_>
-  constexpr bool operator<=(failure<E_> const&) const { return false; }
-
-  template <mutability _mut, std::totally_ordered_with<T> T_, class E_>
-  constexpr bool operator>(basic_result<_mut, T_, E_> const& rhs) const {
-    return rhs.is_ok() ? rhs.unwrap() < this->x : true;
-  }
-
-  template <std::totally_ordered_with<T> T_>
-  constexpr bool operator>(success<T_> const& rhs) const
-  { return rhs < *this; }
-
-  template <class E_>
-  constexpr bool operator>(failure<E_> const&) const { return true; }
-
-  template <mutability _mut, std::totally_ordered_with<T> T_, class E_>
-  constexpr bool operator>=(basic_result<_mut, T_, E_> const& rhs) const {
-    return rhs.is_ok() ? (rhs.unwrap() == this->x) || (rhs.is_ok() < this->x) : true;
-  }
-
-  template <std::totally_ordered_with<T> T_>
-  constexpr bool operator>=(success<T_> const& rhs) const
-  { return rhs <= *this; }
-
-  template <class E_>
-  constexpr bool operator>=(failure<E_> const&) const { return true; }
-
   constexpr T& get() & { return x.get(); }
   constexpr T const& get() const& { return x.get(); }
   constexpr T& get() && { return x.get(); }
+
+  template <mutability _, std::totally_ordered_with<T> U, class E>
+  constexpr std::strong_ordering operator<=>(basic_result<_, U, E> const& other) const {
+    if (other.is_err()) return std::strong_ordering::greater;
+    else {
+      if (this->get() < other.unwrap()) return std::strong_ordering::less;
+      if (this->get() > other.unwrap()) return std::strong_ordering::greater;
+      else return std::strong_ordering::equivalent;
+    }
+  }
+
+  template <std::totally_ordered_with<T> U>
+  constexpr std::strong_ordering operator<=>(success<U> const& other) const {
+    if (this->get() < other.get()) return std::strong_ordering::less;
+    if (this->get() > other.get()) return std::strong_ordering::greater;
+    else return std::strong_ordering::equivalent;
+  }
+
+  template <class E>
+  constexpr std::strong_ordering operator<=>(failure<E> const& other) const {
+    return std::strong_ordering::greater;
+  }
 
 };
 
@@ -263,7 +170,7 @@ public:
   template <display T>
   inline std::ostream&
   operator<<(std::ostream& os, success<T> const& ok) {
-    return os << boost::format("success(%1%)") % as_display( ok.get() );
+    return os << fmt::format("success({})", as_display(ok.get()).as_str());
   }
 
 }

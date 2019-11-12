@@ -3,7 +3,8 @@
 
 #include <mitama/result/traits/impl_traits.hpp>
 #include <boost/hana/functional/overload_linearly.hpp>
-#include <boost/format.hpp>
+#include <boost/hana/functional/fix.hpp>
+#include <fmt/core.h>
 
 namespace mitama {
     template <class T>
@@ -16,23 +17,33 @@ namespace mitama {
         template <class T_>
         constexpr explicit display_closure(T_&& v): value_(std::forward<T_>(v)) {}
 
+        std::string as_str() const {
+            std::stringstream ss;
+            ss << *this;
+            return ss.str();
+        }
+
         friend std::ostream& operator<<(std::ostream& os, display_closure const& closure) {
             using namespace std::literals::string_literals;
             auto _format = boost::hana::fix(boost::hana::overload_linearly(
                 [](auto, auto const& x) -> std::enable_if_t<trait::formattable_element<std::decay_t<decltype(x)>>::value, std::string> {
                     return boost::hana::overload_linearly(
                         [](std::monostate) { return "()"s; },
-                        [](std::string_view x) { return (boost::format("\"%1%\"") % x).str(); },
-                        [](auto const& x) { return (boost::format("%1%") % x).str(); })
+                        [](std::string_view x) { return fmt::format("\"{}\"", x); },
+                        [](auto const& x) {
+                            std::stringstream ss;
+                            ss << x;
+                            return ss.str();
+                        })
                         (x);
                     },
                     [](auto _fmt, auto const& x) -> std::enable_if_t<trait::formattable_dictionary<std::decay_t<decltype(x)>>::value, std::string> {
                         if (x.empty()) return "{}"s;
                         using std::begin, std::end;
                         auto iter = begin(x);
-                        std::string str = "{"s + (boost::format("%1%: %2%") % _fmt(std::get<0>(*iter)) % _fmt(std::get<1>(*iter))).str();
+                        std::string str = "{"s + fmt::format("{}: {}", _fmt(std::get<0>(*iter)), _fmt(std::get<1>(*iter)));
                         while (++iter != end(x)) {
-                            str += (boost::format(",%1%: %2%") % _fmt(std::get<0>(*iter)) % _fmt(std::get<1>(*iter))).str();
+                            str += fmt::format(",{}: {}", _fmt(std::get<0>(*iter)), _fmt(std::get<1>(*iter)));
                         }
                         return str += "}";
                     },
@@ -42,7 +53,7 @@ namespace mitama {
                         auto iter = begin(x);
                         std::string str = "["s + _fmt(*iter);
                         while (++iter != end(x)) {
-                            str += (boost::format(",%1%") % _fmt(*iter)).str();
+                            str += fmt::format(",{}", _fmt(*iter));
                         }
                         return str += "]";
                     },

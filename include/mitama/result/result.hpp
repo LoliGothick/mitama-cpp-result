@@ -8,11 +8,12 @@
 #include <mitama/result/detail/dangling.hpp>
 #include <mitama/concepts/dereferencable.hpp>
 #include <mitama/maybe/fwd/maybe_fwd.hpp>
+#include <mitama/cmp/ord.hpp>
 
 #include <boost/hana/functional/overload.hpp>
 #include <boost/hana/functional/overload_linearly.hpp>
 #include <boost/hana/functional/fix.hpp>
-#include <boost/format.hpp>
+
 
 #include <functional>
 #include <optional>
@@ -33,6 +34,9 @@ template <mutability _mutability, class T, class E>
         && (std::negation_v<std::is_array<std::remove_cvref_t<T>>>)
         && (std::negation_v<std::is_array<std::remove_cvref_t<E>>>)
 class [[nodiscard("warning: unused result which must be used")]] basic_result
+  : public cmp::result_ord<basic_result<_mutability, T, E>>
+  , public cmp::ord<basic_result<_mutability, T, E>, success>
+  , public cmp::ord<basic_result<_mutability, T, E>, failure>
 {
   /// result storage
   std::variant<success<T>, failure<E>> storage_;
@@ -69,9 +73,12 @@ public:
           && std::constructible_from<E, F>
   constexpr
   explicit(!(std::convertible_to<U, T> && std::convertible_to<F, E>))
-  basic_result(basic_result<_mu, U, F> const& res)
-    : storage_(res.storage_)
-  {}
+  basic_result(basic_result<_mu, U, F> const& res) {
+    if (res.is_ok())
+      { this->storage_ = success<T>(res.unwrap()); }
+    else
+      { this->storage_ = failure<E>(res.unwrap_err()); }
+  }
 
   /// @brief
   ///   explicit move construcor for convertible basic_result
@@ -80,9 +87,12 @@ public:
           && std::constructible_from<E, F>
   constexpr
   explicit(!(std::convertible_to<U, T> && std::convertible_to<F, E>))
-  basic_result(basic_result<_mu, U, F>&& res)
-    : storage_(std::move(res.storage_))
-  {}
+  basic_result(basic_result<_mu, U, F> const& res) {
+    if (res.is_ok())
+      { this->storage_ = success<T>(res.unwrap()); }
+    else
+      { this->storage_ = failure<E>(res.unwrap_err()); }
+  }
 
   /// @brief
   ///   copy assignment operator for convertible basic_result
@@ -975,7 +985,7 @@ public:
         return std::get<success<T>>(storage_).get();
       }
       else {
-        PANIC("called `basic_result::unwrap()` on a value: `%1%`", std::get<failure<E>>(storage_));
+        PANIC("called `basic_result::unwrap()` on a value: `{}`", std::get<failure<E>>(storage_));
       }      
     }
     else {
@@ -1000,7 +1010,7 @@ public:
         return std::get<success<T>>(storage_).get();
       }
       else {
-        PANIC("called `basic_result::unwrap()` on a value: `%1%`", std::get<failure<E>>(storage_));
+        PANIC("called `basic_result::unwrap()` on a value: `{}`", std::get<failure<E>>(storage_));
       }      
     }
     else {
@@ -1025,7 +1035,7 @@ public:
         return std::get<failure<E>>(storage_).get();
       }
       else {
-        PANIC("called `basic_result::unwrap_err()` on a value: `%1%`", std::get<success<T>>(storage_));
+        PANIC("called `basic_result::unwrap_err()` on a value: `{}`", std::get<success<T>>(storage_));
       }
     }
     else {
@@ -1050,7 +1060,7 @@ public:
         return std::get<failure<E>>(storage_).get();
       }
       else {
-        PANIC("called `basic_result::unwrap_err()` on a value: `%1%`", std::get<success<T>>(storage_));
+        PANIC("called `basic_result::unwrap_err()` on a value: `{}`", std::get<success<T>>(storage_));
       }
     }
     else {
@@ -1071,7 +1081,7 @@ public:
   force_add_const_t<T>&
   expect(std::string_view msg) const& {
     if ( is_err() )
-      PANIC("%1%: %2%", msg, unwrap_err());
+      PANIC("{}: {}", msg, unwrap_err());
     else
       return unwrap();
   }
@@ -1084,7 +1094,7 @@ public:
   decltype(auto)
   expect(std::string_view msg) & {
     if ( is_err() )
-      PANIC("%1%: %2%", msg, unwrap_err());
+      PANIC("{}: {}", msg, unwrap_err());
     else
       return unwrap();
   }
@@ -1097,7 +1107,7 @@ public:
   force_add_const_t<E>&
   expect_err(std::string_view msg) const& {
     if ( is_ok() )
-      PANIC("%1%: %2%", msg, unwrap());
+      PANIC("{}: {}", msg, unwrap());
     else
       return unwrap_err();
   }
@@ -1110,7 +1120,7 @@ public:
   decltype(auto)
   expect_err(std::string_view msg) & {
     if ( is_ok() )
-      PANIC("%1%: %2%", msg, unwrap());
+      PANIC("{}: {}", msg, unwrap());
     else
       return unwrap_err();
   }
@@ -1278,325 +1288,112 @@ public:
     return std::move(*this).map_or_else(decay_copy(std::forward<F>(f)), decay_copy(std::forward<F>(f)));
   }
 
-  /// @brief
-  ///   equal compare
-  ///
-  /// @constrains
-  ///   (T a, U b) { a == b } -> Same<bool>;
-  ///   (E a, F b) { a == b } -> Same<bool>
-  ///
-  /// @note
-  ///   This method tests for self and other values to be equal, and is used by `==` found by ADL.
-  template <mutability _mut, std::equality_comparable_with<T> U, std::equality_comparable_with<E> F>
-  bool operator==(basic_result<_mut, U, F> const& rhs) const& {
-    return std::visit(
-      boost::hana::overload(
-        [](success<T> const& l, success<U> const& r) { return l.get() == r.get(); },
-        [](failure<E> const& l, failure<F> const& r) { return l.get() == r.get(); },
-        [](auto&&...) { return false; }),
-      this->storage_, rhs.storage_);
-  }
-
-  /// @brief
-  ///   not equal compare
-  ///
-  /// @constrains
-  ///   (T a, U b) { a == b } -> Same<bool>;
-  ///   (E a, F b) { a == b } -> Same<bool>
-  ///
-  /// @note
-  ///   This method tests for self and other values to be not equal, and is used by `==` found by ADL.
-  template <mutability _mut, std::equality_comparable_with<T> U, std::equality_comparable_with<E> F>
-  bool operator!=(basic_result<_mut, U, F> const& rhs) const& {
-    return std::visit(
-      boost::hana::overload(
-        [](success<T> const& l, success<U> const& r) { return !(l.get() == r.get()); },
-        [](failure<E> const& l, failure<F> const& r) { return !(l.get() == r.get()); },
-        [](auto&&...) { return true; }),
-      this->storage_, rhs.storage_);
-  }
-
-  /// @brief
-  ///   equal compare
-  ///
-  /// @constrains
-  ///   (T a, U b) { a == b } -> Same<bool>
-  ///
-  /// @note
-  ///   This method tests for self and other values to be equal, and is used by `==` found by ADL.
-  template <std::equality_comparable_with<T> U>
-  bool operator==(success<U> const& rhs) const {
-    return this->is_ok() ? this->unwrap() == rhs.get() : false;
-  }
-
-  /// @brief
-  ///   not equal compare
-  ///
-  /// @constrains
-  ///   (T a, U b) { a == b } -> Same<bool>
-  ///
-  /// @note
-  ///   This method tests for self and other values to be not equal, and is used by `==` found by ADL.
-  template <std::equality_comparable_with<T> U>
-  bool operator!=(success<U> const& rhs) const {
-    return this->is_ok() ? !(this->unwrap() == rhs.get()) : true;
-  }
-
-  /// @brief
-  ///   equal compare
-  ///
-  /// @constrains
-  ///   (E a, F b) { a == b } -> Same<bool>
-  ///
-  /// @note
-  ///   This method tests for self and other values to be equal, and is used by `==` found by ADL.
-  template <std::equality_comparable_with<E> F>
-  bool operator==(failure<F> const& rhs) const {
-    return this->is_err() ? this->unwrap_err() == rhs.get() : false;
-  }
-
-  /// @brief
-  ///   not equal compare
-  ///
-  /// @constrains
-  ///   (E a, F b) { a == b } -> Same<bool>
-  ///
-  /// @note
-  ///   This method tests for self and other values to be equal, and is used by `==` found by ADL.
-  template <std::equality_comparable_with<E> F>
-  bool operator!=(failure<F> const& rhs) const {
-    return this->is_err() ? !(this->unwrap_err() == rhs.get()) : true;
-  }
-
   template <mutability _, std::totally_ordered_with<T> U, std::totally_ordered_with<E> F>
-  bool operator<(basic_result<_, U, F> const& rhs) const {
-    return std::visit(
-      boost::hana::overload(
-        [](success<T> const& l, success<U> const& r) { return l.get() < r.get(); },
-        [](failure<E> const& l, failure<F> const& r) { return l.get() < r.get(); },
-        [](failure<E> const&, success<U> const&) { return true; },
-        [](success<T> const&, failure<F> const&) { return false; }),
-      this->storage_, rhs.storage_);
+  constexpr std::strong_ordering operator<=>(basic_result<_, U, F> const& other) const {
+    if (this->is_ok() && other.is_err()) return std::strong_ordering::greater;
+    else if (this->is_err() && other.is_ok()) return std::strong_ordering::less;
+    else if (this->is_ok() && other.is_ok()) {
+      if (this->unwrap() < other.unwrap()) return std::strong_ordering::less;
+      if (this->unwrap() > other.unwrap()) return std::strong_ordering::greater;
+      else return std::strong_ordering::equivalent;
+    }
+    else {
+      if (this->unwrap_err() < other.unwrap_err()) return std::strong_ordering::less;
+      if (this->unwrap_err() > other.unwrap_err()) return std::strong_ordering::greater;
+      else return std::strong_ordering::equivalent;
+    }
   }
 
   template <std::totally_ordered_with<T> U>
-  bool operator<(success<U> const& rhs) const {
-    return rhs > *this;
+  constexpr std::strong_ordering operator<=>(success<U> const& other) const {
+    if (this->is_err()) return std::strong_ordering::less;
+    else {
+      if (this->unwrap() < other.get()) return std::strong_ordering::less;
+      if (this->unwrap() > other.get()) return std::strong_ordering::greater;
+      else return std::strong_ordering::equivalent;
+    }
   }
 
   template <std::totally_ordered_with<E> F>
-  bool operator<(failure<F> const& rhs) const {
-    return rhs > *this;
+  constexpr std::strong_ordering operator<=>(failure<F> const& other) const {
+    if (this->is_ok()) return std::strong_ordering::greater;
+    else {
+      if (this->unwrap_err() < other.get()) return std::strong_ordering::less;
+      if (this->unwrap_err() > other.get()) return std::strong_ordering::greater;
+      else return std::strong_ordering::equivalent;
+    }
   }
-
-  template <mutability _, std::totally_ordered_with<T> U, std::totally_ordered_with<E> F>
-  bool operator>(basic_result<_, U, F> const& rhs) const {
-    return std::visit(
-      boost::hana::overload(
-        [](success<T> const& l, success<U> const& r) { return r.get() < l.get(); },
-        [](failure<E> const& l, failure<F> const& r) { return r.get() < l.get(); },
-        [](failure<E> const&, success<U> const&) { return false; },
-        [](success<T> const&, failure<F> const&) { return true; }),
-      this->storage_, rhs.storage_);
-  }
-
-  template <std::totally_ordered_with<T> U>
-  bool operator>(success<U> const& rhs) const {
-    return rhs < *this;
-  }
-
-  template <std::totally_ordered_with<E> F>
-  bool operator>(failure<F> const& rhs) const {
-    return rhs < *this;
-  }
-
-  template <mutability _, std::totally_ordered_with<T> U, std::totally_ordered_with<E> F>
-  bool operator<=(basic_result<_, U, F> const& rhs) const {
-    return std::visit(
-      boost::hana::overload(
-        [](success<T> const& l, success<U> const& r) { return (l.get() == r.get()) || (l.get() < r.get()); },
-        [](failure<E> const& l, failure<F> const& r) { return (l.get() == r.get()) || (l.get() < r.get()); },
-        [](failure<E> const&, success<U> const&) { return true; },
-        [](success<T> const&, failure<F> const&) { return false; }),
-      this->storage_, rhs.storage_);
-  }
-
-  template <std::totally_ordered_with<T> U>
-  bool operator<=(success<U> const& rhs) const {
-    return rhs >= *this;
-  }
-
-  template <std::totally_ordered_with<E> F>
-  bool operator<=(failure<F> const& rhs) const {
-    return rhs >= *this;
-  }
-
-  template <mutability _, std::totally_ordered_with<T> U, std::totally_ordered_with<E> F>
-  bool operator>=(basic_result<_, U, F> const& rhs) const {
-    return std::visit(
-      boost::hana::overload(
-        [](success<T> const& l, success<U> const& r) { return (l.get() == r.get()) || (r.get() < l.get()); },
-        [](failure<E> const& l, failure<F> const& r) { return (l.get() == r.get()) || (r.get() < l.get()); },
-        [](failure<E> const&, success<U> const&) { return false; },
-        [](success<T> const&, failure<F> const&) { return true; }),
-      this->storage_, rhs.storage_);
-  }
-
-  template <std::totally_ordered_with<T> U>
-  bool operator>=(success<U> const& rhs) const {
-    return rhs <= *this;
-  }
-
-  template <std::totally_ordered_with<E> F>
-  bool operator>=(failure<F> const& rhs) const {
-    return rhs <= *this;
-  }
-
 };
 
-  template <mutability _, class T, class E, std::equality_comparable_with<T> U>
-  std::enable_if_t<
-    std::negation_v<
-      std::disjunction<
-        is_result<std::decay_t<U>>,
-        is_ok_type<std::decay_t<U>>,
-        is_err_type<std::decay_t<U>>>>,
-  bool>
-  operator==(basic_result<_, T, E> const& lhs, U&& rhs) {
-    return lhs == success(std::forward<U>(rhs));
-  }
+template <mutability _, std::totally_ordered T, class E>
+inline constexpr std::strong_ordering
+operator<=>(basic_result<_, T, E> const& lhs, typename basic_result<_, T, E>::ok_type const& rhs)
+{ return lhs <=> success(rhs); }
 
-  template <mutability _, class T, class E, std::equality_comparable_with<T> U>
-  std::enable_if_t<
-    std::negation_v<
-      std::disjunction<
-        is_result<std::decay_t<T>>,
-        is_ok_type<std::decay_t<T>>,
-        is_err_type<std::decay_t<T>>>>,
-  bool>
-  operator==(T&& lhs, basic_result<_, U, E> const& rhs) {
-    return success(std::forward<T>(lhs)) == rhs;
-  }
+template <mutability _, std::totally_ordered T, class E>
+inline constexpr std::strong_ordering
+operator<=>(typename basic_result<_, T, E>::ok_type const& lhs, basic_result<_, T, E> const& rhs)
+{ return success(lhs) <=> rhs; }
 
-  template <mutability _, class T, class E, std::equality_comparable_with<T> U>
-  std::enable_if_t<
-    std::negation_v<
-      std::disjunction<
-        is_result<std::decay_t<U>>,
-        is_ok_type<std::decay_t<U>>,
-        is_err_type<std::decay_t<U>>>>,
-  bool>
-  operator!=(basic_result<_, T, E> const& lhs, U&& rhs) {
-    return lhs != success(std::forward<U>(rhs));
-  }
+template <mutability _, std::totally_ordered T, class E>
+inline constexpr bool
+operator==(basic_result<_, T, E> const& lhs, typename basic_result<_, T, E>::ok_type const& rhs)
+{ return (lhs <=> success(rhs)) == std::strong_ordering::equivalent; }
 
-  template <mutability _, class T, class E, std::equality_comparable_with<T> U>
-  std::enable_if_t<
-    std::negation_v<
-      std::disjunction<
-        is_result<std::decay_t<T>>,
-        is_ok_type<std::decay_t<T>>,
-        is_err_type<std::decay_t<T>>>>,
-  bool>
-  operator!=(T&& lhs, basic_result<_, U, E> const& rhs) {
-    return success(std::forward<T>(lhs)) != rhs;
-  }
+template <mutability _, std::totally_ordered T, class E>
+inline constexpr bool
+operator==(typename basic_result<_, T, E>::ok_type const& lhs, basic_result<_, T, E> const& rhs)
+{ return (success(lhs) <=> rhs) == std::strong_ordering::equivalent; }
 
-  template <mutability _, class T, class E, std::totally_ordered_with<T> U>
-  std::enable_if_t<
-    std::negation_v<
-      std::disjunction<
-        is_result<std::decay_t<U>>,
-        is_ok_type<std::decay_t<U>>,
-        is_err_type<std::decay_t<U>>>>,
-  bool>
-  operator<(basic_result<_, T, E> const& lhs, U&& rhs) {
-    return lhs < success(std::forward<U>(rhs));
-  }
+template <mutability _, std::totally_ordered T, class E>
+inline constexpr bool
+operator!=(basic_result<_, T, E> const& lhs, typename basic_result<_, T, E>::ok_type const& rhs)
+{ return (lhs <=> success(rhs)) != std::strong_ordering::equivalent; }
 
-  template <mutability _, class T, class E, std::totally_ordered_with<T> U>
-  std::enable_if_t<
-    std::negation_v<
-      std::disjunction<
-        is_result<std::decay_t<T>>,
-        is_ok_type<std::decay_t<T>>,
-        is_err_type<std::decay_t<T>>>>,
-  bool>
-  operator<(T&& lhs, basic_result<_, U, E> const& rhs) {
-    return success(std::forward<T>(lhs)) < rhs;
-  }
+template <mutability _, std::totally_ordered T, class E>
+inline constexpr bool
+operator!=(typename basic_result<_, T, E>::ok_type const& lhs, basic_result<_, T, E> const& rhs)
+{ return (success(lhs) <=> rhs) != std::strong_ordering::equivalent; }
 
-  template <mutability _, class T, class E, std::totally_ordered_with<T> U>
-  std::enable_if_t<
-    std::negation_v<
-      std::disjunction<
-        is_result<std::decay_t<U>>,
-        is_ok_type<std::decay_t<U>>,
-        is_err_type<std::decay_t<U>>>>,
-  bool>
-  operator<=(basic_result<_, T, E> const& lhs, U&& rhs) {
-    return lhs <= success(std::forward<U>(rhs));
-  }
+template <mutability _, std::totally_ordered T, class E>
+inline constexpr bool
+operator<(basic_result<_, T, E> const& lhs, typename basic_result<_, T, E>::ok_type const& rhs)
+{ return (lhs <=> success(rhs)) == std::strong_ordering::less; }
 
-  template <mutability _, class T, class E, std::totally_ordered_with<T> U>
-  std::enable_if_t<
-    std::negation_v<
-      std::disjunction<
-        is_result<std::decay_t<T>>,
-        is_ok_type<std::decay_t<T>>,
-        is_err_type<std::decay_t<T>>>>,
-  bool>
-  operator<=(T&& lhs, basic_result<_, U, E> const& rhs) {
-    return success(std::forward<T>(lhs)) <= rhs;
-  }
+template <mutability _, std::totally_ordered T, class E>
+inline constexpr bool
+operator<(typename basic_result<_, T, E>::ok_type const& lhs, basic_result<_, T, E> const& rhs)
+{ return (success(lhs) <=> rhs) == std::strong_ordering::less; }
 
-  template <mutability _, class T, class E, std::totally_ordered_with<T> U>
-  std::enable_if_t<
-    std::negation_v<
-      std::disjunction<
-        is_result<std::decay_t<U>>,
-        is_ok_type<std::decay_t<U>>,
-        is_err_type<std::decay_t<U>>>>,
-  bool>
-  operator>(basic_result<_, T, E> const& lhs, U&& rhs) {
-    return lhs > success(std::forward<U>(rhs));
-  }
+template <mutability _, std::totally_ordered T, class E>
+inline constexpr bool
+operator<=(basic_result<_, T, E> const& lhs, typename basic_result<_, T, E>::ok_type const& rhs)
+{ return (lhs <=> success(rhs)) != std::strong_ordering::greater; }
 
-  template <mutability _, class T, class E, std::totally_ordered_with<T> U>
-  std::enable_if_t<
-    std::negation_v<
-      std::disjunction<
-        is_result<std::decay_t<T>>,
-        is_ok_type<std::decay_t<T>>,
-        is_err_type<std::decay_t<T>>>>,
-  bool>
-  operator>(T&& lhs, basic_result<_, U, E> const& rhs) {
-    return success(std::forward<T>(lhs)) > rhs;
-  }
+template <mutability _, std::totally_ordered T, class E>
+inline constexpr bool
+operator<=(typename basic_result<_, T, E>::ok_type const& lhs, basic_result<_, T, E> const& rhs)
+{ return (success(lhs) <=> rhs) != std::strong_ordering::greater; }
 
-  template <mutability _, class T, class E, std::totally_ordered_with<T> U>
-  std::enable_if_t<
-    std::negation_v<
-      std::disjunction<
-        is_result<std::decay_t<U>>,
-        is_ok_type<std::decay_t<U>>,
-        is_err_type<std::decay_t<U>>>>,
-  bool>
-  operator>=(basic_result<_, T, E> const& lhs, U&& rhs) {
-    return lhs >= success(std::forward<U>(rhs));
-  }
+template <mutability _, std::totally_ordered T, class E>
+inline constexpr bool
+operator>(basic_result<_, T, E> const& lhs, typename basic_result<_, T, E>::ok_type const& rhs)
+{ return (lhs <=> success(rhs)) == std::strong_ordering::greater; }
 
-  template <mutability _, class T, class E, std::totally_ordered_with<T> U>
-  std::enable_if_t<
-    std::negation_v<
-      std::disjunction<
-        is_result<std::decay_t<T>>,
-        is_ok_type<std::decay_t<T>>,
-        is_err_type<std::decay_t<T>>>>,
-  bool>
-  operator>=(T&& lhs, basic_result<_, U, E> const& rhs) {
-    return success(std::forward<T>(lhs)) >= rhs;
-  }
+template <mutability _, std::totally_ordered T, class E>
+inline constexpr bool
+operator>(typename basic_result<_, T, E>::ok_type const& lhs, basic_result<_, T, E> const& rhs)
+{ return (success(lhs) <=> rhs) == std::strong_ordering::greater; }
+
+template <mutability _, std::totally_ordered T, class E>
+inline constexpr bool
+operator>=(basic_result<_, T, E> const& lhs, typename basic_result<_, T, E>::ok_type const& rhs)
+{ return (lhs <=> success(rhs)) != std::strong_ordering::less; }
+
+template <mutability _, std::totally_ordered T, class E>
+inline constexpr bool
+operator>=(typename basic_result<_, T, E>::ok_type const& lhs, basic_result<_, T, E> const& rhs)
+{ return (success(lhs) <=> rhs) != std::strong_ordering::less; }
 
 } // namespace mitama
 

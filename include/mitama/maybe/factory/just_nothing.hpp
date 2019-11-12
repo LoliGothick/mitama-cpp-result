@@ -7,6 +7,8 @@
 #include <mitama/concepts/display.hpp>
 #include <mitama/concepts/satisfy.hpp>
 
+#include <fmt/core.h>
+
 #include <boost/hana/functional/fix.hpp>
 #include <boost/hana/functional/overload.hpp>
 #include <boost/hana/functional/overload_linearly.hpp>
@@ -384,7 +386,7 @@ public:
 template <display T>
 inline std::ostream&
 operator<<(std::ostream& os, just_t<T> const& x) {
-    return os << boost::format("just(%1%)") % as_display( x.get() );
+    return os << fmt::format("just({})", as_display(x.get()).as_str());
 }
 
 template <class Target = void, class... Types>

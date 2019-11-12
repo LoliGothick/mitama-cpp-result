@@ -14,7 +14,7 @@
 #include <mitama/concepts/dereferencable.hpp>
 #include <mitama/concepts/satisfy.hpp>
 
-#include <boost/format.hpp>
+#include <fmt/core.h>
 #include <boost/hana/functional/fix.hpp>
 #include <boost/hana/functional/overload.hpp>
 #include <boost/hana/functional/overload_linearly.hpp>
@@ -300,7 +300,7 @@ class [[nodiscard("warning: unused result which must be used")]] maybe
     }
 
     constexpr value_type& expect(std::string_view msg) & {
-        if (is_nothing()) PANIC("%1%", msg);
+        if (is_nothing()) PANIC("{}", msg);
         return unwrap();
     }
 
@@ -309,7 +309,7 @@ class [[nodiscard("warning: unused result which must be used")]] maybe
             return unwrap();
         }
         else {
-            PANIC("%1%", msg);
+            PANIC("{}", msg);
         }
     }
 
@@ -318,7 +318,7 @@ class [[nodiscard("warning: unused result which must be used")]] maybe
             return std::move(unwrap());
         }
         else {
-            PANIC("%1%", msg);
+            PANIC("{}", msg);
         }
     }
 
@@ -703,7 +703,7 @@ template <display T>
 std::ostream&
 operator<<(std::ostream& os, maybe<T> const& may) {
     using namespace std::literals;
-    return may.is_just() ? os << boost::format("just(%1%)") % as_display( may.unwrap() )
+    return may.is_just() ? os << fmt::format("just({})", as_display(may.unwrap()).as_str())
                          : os << "nothing"sv;
 }
 

@@ -23,8 +23,8 @@ namespace mitama {
 template <mutability _, display T, display E>
 std::ostream&
 operator<<(std::ostream& os, basic_result<_, T, E> const& res) {
-  return res.is_ok() ? os << boost::format("success(%1%)") % as_display( res.unwrap() )
-                     : os << boost::format("failure(%1%)") % as_display( res.unwrap_err() );
+  return res.is_ok() ? os << fmt::format("success({})", as_display(res.unwrap()).as_str()) 
+                     : os << fmt::format("failure({})", as_display(res.unwrap_err()).as_str());
 }
 
 }
