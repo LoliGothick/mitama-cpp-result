@@ -40,18 +40,25 @@ You should use `mut_result<T, E>` if you want to resubstitute,
 
 ## success/failure the in-place factory classes
 
-`success` and `failure` are in-place factory classes for `basic_result`.
+`success_t` and `failure_t` are in-place factory classes for `basic_result`.
 
-If you want to initialize `result<T, E>` with successful value of `T`, initialize with `success<T>`.
+If you want to initialize `result<T, E>` with successful value of `T`, initialize with `success_t<T>`.
 
 ```cpp
-result<int, std::string> res = success(42);
+result<int, std::string> res = success_t{42};
 ```
 
-Similarly, if you want to initialize `result<T, E>` with unsuccessful value of `E`, initialize with `failure<E>`.
+Similarly, if you want to initialize `result<T, E>` with unsuccessful value of `E`, initialize with `failure_t<E>`.
 
 ```cpp
-result<int, std::string> res = failure("error"s);
+result<int, std::string> res = failure_t{"error"};
+```
+
+However, using `success` and `failure` (factory methods) is recommended.
+
+```cpp
+result<int, std::string> ok = success(42);
+result<int, std::string> ng = failure("error");
 ```
 
 ## Result with reference types

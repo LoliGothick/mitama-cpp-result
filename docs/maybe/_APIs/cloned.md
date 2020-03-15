@@ -20,7 +20,7 @@ using namespace mitama;
 
 int main() {
   int x = 12;
-  maybe<int&> opt_x = x;
+  maybe<int&> opt_x = just(x);
   assert(opt_x == just(12));
   assert(&(opt_x.unwrap()) == &x);
 
