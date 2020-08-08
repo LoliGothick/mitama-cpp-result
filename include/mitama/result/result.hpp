@@ -207,32 +207,32 @@ public:
 
   /// @brief
   ///   in-place constructor for successful result
-  template <class... Args,
-            where<std::is_constructible<T, Args&&...>> = required>
+  template <class... Args>
+      requires std::constructible_from<T, Args&&...>
   constexpr explicit basic_result(in_place_ok_t, Args && ... args)
     : storage_{std::in_place_type<success<T>>, std::in_place, std::forward<Args>(args)...}
   {}
 
   /// @brief
   ///   in-place constructor for unsuccessful result
-  template <class... Args,
-            where<std::is_constructible<E, Args&&...>> = required>
+  template <class... Args>
+      requires std::constructible_from<E, Args&&...>
   constexpr explicit basic_result(in_place_err_t, Args && ... args)
     : storage_{std::in_place_type<failure<E>>, std::in_place, std::forward<Args>(args)...}
   {}
 
   /// @brief
   ///   in-place constructor with initializer_list for successful result
-  template <class U, class... Args,
-            where<std::is_constructible<T, std::initializer_list<U>, Args&&...>> = required>
+  template <class U, class... Args>
+      requires std::constructible_from<T, std::initializer_list<U>, Args&&...>
   constexpr explicit basic_result(in_place_ok_t, std::initializer_list<U> il, Args && ... args)
     : storage_{std::in_place_type<success<T>>, std::in_place, il, std::forward<Args>(args)...}
   {}
 
   /// @brief
   ///   in-place constructor with initializer_list for unsuccessful result
-  template <class U, class... Args,
-            where<std::is_constructible<E, Args&&...>> = required>
+  template <class U, class... Args>
+      requires std::constructible_from<E, std::initializer_list<U>, Args&&...>
   constexpr explicit basic_result(in_place_err_t, std::initializer_list<U> il, Args && ... args)
     : storage_{std::in_place_type<failure<E>>, std::in_place, il, std::forward<Args>(args)...}
   {}
