@@ -33,4 +33,4 @@ workflows:
   build:
     jobs:
       - test:
-          compiler: gcc-trunk-2019-11-12
+          compiler: gcc-head-20200808
