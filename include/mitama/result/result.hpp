@@ -68,7 +68,7 @@ public:
   constexpr basic_result() noexcept = delete;
 
   /// @brief
-  ///   explicit copy construcor for convertible basic_result
+  ///   explicit copy constructor for convertible basic_result
   template <mutability _mu, class U, class F>
     requires std::constructible_from<T, U>
           && std::constructible_from<E, F>
@@ -82,7 +82,7 @@ public:
   }
 
   /// @brief
-  ///   explicit move construcor for convertible basic_result
+  ///   explicit move constructor for convertible basic_result
   template <mutability _mu, class U, class F>
     requires std::constructible_from<T, U>
           && std::constructible_from<E, F>
@@ -241,7 +241,7 @@ public:
   ///   Checks if self has a success value.
   ///
   /// @note
-  ///   Returns true if the result is succsess.
+  ///   Returns true if the result is success.
   [[nodiscard("Warning: Do not discard the return value of `is_ok()`.")]]
   constexpr bool is_ok() const noexcept { return std::holds_alternative<success<T>>(storage_); }
 
@@ -257,7 +257,7 @@ public:
   ///   Converts from basic_result to bool.
   ///
   /// @note
-  ///   Covert result to bool and returns true if the result is succsess.
+  ///   Covert result to bool and returns true if the result is success.
   explicit constexpr operator bool() const noexcept { return std::holds_alternative<success<T>>(storage_); }
 
   /// @brief
