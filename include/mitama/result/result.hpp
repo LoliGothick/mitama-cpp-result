@@ -242,6 +242,7 @@ public:
   ///
   /// @note
   ///   Returns true if the result is succsess.
+  [[nodiscard("Warning: Do not discard the return value of `is_ok()`.")]]
   constexpr bool is_ok() const noexcept { return std::holds_alternative<success<T>>(storage_); }
 
   /// @brief
@@ -249,6 +250,7 @@ public:
   ///
   /// @note
   ///   Returns true if the result is failure.
+  [[nodiscard("Warning: Do not discard the return value of `is_err()`.")]]
   constexpr bool is_err() const noexcept { return std::holds_alternative<failure<E>>(storage_); }
 
   /// @brief
