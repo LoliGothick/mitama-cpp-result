@@ -67,6 +67,8 @@ public:
   /// default constructor is not permitted
   constexpr basic_result() noexcept = delete;
 
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "google-explicit-constructor"
   /// @brief
   ///   explicit copy constructor for convertible basic_result
   template <mutability _mu, class U, class F>
@@ -94,6 +96,7 @@ public:
     else
       { this->storage_ = failure<E>(res.unwrap_err()); }
   }
+#pragma clang diagnostic pop
 
   /// @brief
   ///   copy assignment operator for convertible basic_result
@@ -165,6 +168,8 @@ public:
     return *this;
   }
 
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "google-explicit-constructor"
   /// @brief
   ///   explicit constructor for successful lvalue
   template <class U> requires std::constructible_from<T, const U&>
@@ -196,6 +201,7 @@ public:
   basic_result(failure<F>&& err)
     : storage_{std::in_place_type<failure<E>>, std::in_place, static_cast<F&&>(err.get())}
   {}
+#pragma clang diagnostic pop
 
   constexpr explicit basic_result(success<>)
     : storage_{std::in_place_type<success<>>, std::monostate{}}
