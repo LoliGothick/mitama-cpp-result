@@ -88,7 +88,7 @@ public:
           && std::constructible_from<E, F>
   constexpr
   explicit(!(std::convertible_to<U, T> && std::convertible_to<F, E>))
-  basic_result(basic_result<_mu, U, F> const& res) {
+  basic_result(basic_result<_mu, U, F>&& res) {
     if (res.is_ok())
       { this->storage_ = success<T>(res.unwrap()); }
     else
@@ -197,11 +197,11 @@ public:
     : storage_{std::in_place_type<failure<E>>, std::in_place, static_cast<F&&>(err.get())}
   {}
 
-  constexpr basic_result(success<>)
+  constexpr explicit basic_result(success<>)
     : storage_{std::in_place_type<success<>>, std::monostate{}}
   {}
 
-  constexpr basic_result(failure<>)
+  constexpr explicit basic_result(failure<>)
     : storage_{std::in_place_type<failure<>>, std::monostate{}}
   {}
 
