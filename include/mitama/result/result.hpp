@@ -943,7 +943,7 @@ public:
   ///   Consumes the self argument then,
   ///   if success, returns the contained value,
   ///   otherwise; if Err, returns the default value for that type.
-  T unwrap_or_default() const requires (std::default_constructible<T>)
+  T unwrap_or_default() const requires (std::default_initializable<T>)
   {
     return is_ok() ? unwrap() : T();
   }

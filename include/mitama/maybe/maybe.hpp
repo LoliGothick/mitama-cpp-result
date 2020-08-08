@@ -218,7 +218,7 @@ class [[nodiscard("warning: unused result which must be used")]] maybe
     ///   Consumes the self argument then,
     ///   if just, returns the contained value,
     ///   otherwise; if nothing, returns the default value for that type.
-    constexpr T unwrap_or_default() const requires (std::default_constructible<T>)
+    constexpr T unwrap_or_default() const requires (std::default_initializable<T>)
     {
         return is_just() ? unwrap() : T();
     }
