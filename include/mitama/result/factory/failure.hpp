@@ -3,7 +3,7 @@
 #include <mitama/mitamagic/is_interface_of.hpp>
 #include <mitama/result/detail/fwd.hpp>
 #include <mitama/result/detail/meta.hpp>
-#include <mitama/result/traits/impl_traits.hpp>
+#include <mitama/concepts/formattable.hpp>
 #include <mitama/cmp/ord.hpp>
 
 #include <boost/hana/functional/fix.hpp>
@@ -37,19 +37,19 @@ public:
 
   template <std::constructible_from<E> F> requires (!std::same_as<std::remove_cvref_t<F>, failure>)
   constexpr explicit(!std::convertible_to<F&&, E>)
-  failure(F&& u)
+  failure(F&& u) // NOLINT(google-explicit-constructor,bugprone-forwarding-reference-overload)
       noexcept(std::is_nothrow_constructible_v<E, F&&>)
       : x(std::forward<F>(u)) {}
 
   template <std::constructible_from<E> F> requires (!std::same_as<std::remove_cvref_t<F>, failure>)
   constexpr explicit(!std::convertible_to<F&, E>)
-  failure(const failure<F> &t)
+  failure(const failure<F> &t) // NOLINT(google-explicit-constructor)
       noexcept(std::is_nothrow_constructible_v<E, F&>)
       : x(t.get()) {}
 
   template <std::constructible_from<E> F> requires (!std::same_as<std::remove_cvref_t<F>, failure>)
   constexpr explicit(!std::convertible_to<F&&, E>)
-  failure(failure<F>&& t)
+  failure(failure<F>&& t) // NOLINT(google-explicit-constructor)
       noexcept(std::is_nothrow_constructible_v<E, F&&>)
       : x(static_cast<F&&>(t.get())) {}
 
@@ -115,9 +115,9 @@ public:
   template <class Derived> requires (std::is_base_of_v<E, Derived>)
   explicit constexpr failure(std::in_place_t, Derived& derived) : x(derived) {}
 
-  explicit constexpr failure(failure &&) = default;
-  explicit constexpr failure(failure const&) = default;
-  constexpr failure& operator=(failure &&) = default;
+  constexpr failure(failure &&) noexcept = default;
+  constexpr failure(failure const&) = default;
+  constexpr failure& operator=(failure &&) noexcept = default;
   constexpr failure& operator=(failure const&) = default;
 
   constexpr E& get() & { return x.get(); }

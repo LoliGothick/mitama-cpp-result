@@ -3,7 +3,7 @@
 #include <mitama/mitamagic/is_interface_of.hpp>
 #include <mitama/result/detail/fwd.hpp>
 #include <mitama/result/detail/meta.hpp>
-#include <mitama/result/traits/impl_traits.hpp>
+#include <mitama/concepts/formattable.hpp>
 #include <mitama/cmp/ord.hpp>
 
 #include <boost/hana/functional/fix.hpp>
@@ -46,19 +46,19 @@ public:
 
   template <std::constructible_from<T> U> requires (!std::same_as<std::remove_cvref_t<U>, success>)
   constexpr explicit(!std::convertible_to<U&&, T>)
-  success(U&& u)
+  success(U&& u) // NOLINT(google-explicit-constructor,bugprone-forwarding-reference-overload)
       noexcept(std::is_nothrow_constructible_v<T, U&&>)
       : x(std::forward<U>(u)) {}
 
   template <std::constructible_from<T> U> requires (!std::same_as<std::remove_cvref_t<U>, success>)
   constexpr explicit(!std::convertible_to<U const&, T>)
-  success(const success<U> &t)
+  success(const success<U> &t) // NOLINT(google-explicit-constructor)
       noexcept(std::is_nothrow_constructible_v<T, U const&>)
       : x(t.get()) {}
 
   template <std::constructible_from<T> U> requires (!std::same_as<std::remove_cvref_t<U>, success>)
   constexpr explicit(!std::convertible_to<U&&, T>)
-  success(success<U>&& t)
+  success(success<U>&& t) // NOLINT(google-explicit-constructor)
       noexcept(std::is_nothrow_constructible_v<T, U&&>)
       : x(static_cast<U&&>(t.get())) {}
 
@@ -125,9 +125,9 @@ public:
   template <class Derived> requires (std::is_base_of_v<std::remove_cv_t<T>, std::remove_cv_t<Derived>>)
   explicit constexpr success(std::in_place_t, Derived& derived): x{derived} {}
 
-  explicit constexpr success(success &&) = default;
-  explicit constexpr success(success const&) = default;
-  constexpr success& operator=(success &&) = default;
+  constexpr success(success &&) noexcept = default;
+  constexpr success(success const&) = default;
+  constexpr success& operator=(success &&) noexcept = default;
   constexpr success& operator=(success const&) = default;
 
   constexpr T& get() & { return x.get(); }

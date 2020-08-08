@@ -1,7 +1,7 @@
 #ifndef MITAMA_RESULT_CONCEPTS_FORMAT_HPP
 #define MITAMA_RESULT_CONCEPTS_FORMAT_HPP
 
-#include <mitama/result/traits/impl_traits.hpp>
+#include <mitama/concepts/formattable.hpp>
 #include <boost/hana/functional/overload_linearly.hpp>
 #include <boost/hana/functional/fix.hpp>
 #include <fmt/core.h>
@@ -15,9 +15,10 @@ namespace mitama {
         T value_;
     public:
         template <class T_>
-        constexpr explicit display_closure(T_&& v): value_(std::forward<T_>(v)) {}
+        constexpr explicit display_closure(T_&& v) // NOLINT(bugprone-forwarding-reference-overload)
+            : value_(std::forward<T_>(v)) {}
 
-        std::string as_str() const {
+        [[nodiscard]] std::string as_str() const {
             std::stringstream ss;
             ss << *this;
             return ss.str();
@@ -25,8 +26,9 @@ namespace mitama {
 
         friend std::ostream& operator<<(std::ostream& os, display_closure const& closure) {
             using namespace std::literals::string_literals;
+
             auto _format = boost::hana::fix(boost::hana::overload_linearly(
-                [](auto, auto const& x) -> std::enable_if_t<trait::formattable_element<std::decay_t<decltype(x)>>::value, std::string> {
+                [](auto, trait::formattable_element auto const& x) {
                     return boost::hana::overload_linearly(
                         [](std::monostate) { return "()"s; },
                         [](std::string_view x) { return fmt::format("\"{}\"", x); },
@@ -37,17 +39,17 @@ namespace mitama {
                         })
                         (x);
                     },
-                    [](auto _fmt, auto const& x) -> std::enable_if_t<trait::formattable_dictionary<std::decay_t<decltype(x)>>::value, std::string> {
+                    [](auto _fmt, trait::formattable_dictionary auto const& x) {
                         if (x.empty()) return "{}"s;
                         using std::begin, std::end;
                         auto iter = begin(x);
-                        std::string str = "{"s + fmt::format("{}: {}", _fmt(std::get<0>(*iter)), _fmt(std::get<1>(*iter)));
+                        auto str = "{"s + fmt::format("{}: {}", _fmt(std::get<0>(*iter)), _fmt(std::get<1>(*iter)));
                         while (++iter != end(x)) {
                             str += fmt::format(",{}: {}", _fmt(std::get<0>(*iter)), _fmt(std::get<1>(*iter)));
                         }
                         return str += "}";
                     },
-                    [](auto _fmt, auto const& x) -> std::enable_if_t<trait::formattable_range<std::decay_t<decltype(x)>>::value, std::string> {
+                    [](auto _fmt, trait::formattable_range auto const& x) {
                         if (x.empty()) return "[]"s;
                         using std::begin, std::end;
                         auto iter = begin(x);
@@ -57,7 +59,7 @@ namespace mitama {
                         }
                         return str += "]";
                     },
-                    [](auto _fmt, auto const& x) -> std::enable_if_t<trait::formattable_tuple<std::decay_t<decltype(x)>>::value, std::string> {
+                    [](auto _fmt, trait::formattable_tuple auto const& x) {
                         if constexpr (std::tuple_size_v<std::decay_t<decltype(x)>> == 0) {
                             return "()"s;
                         }

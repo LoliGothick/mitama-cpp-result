@@ -67,8 +67,6 @@ public:
   /// default constructor is not permitted
   constexpr basic_result() noexcept = delete;
 
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "google-explicit-constructor"
   /// @brief
   ///   explicit copy constructor for convertible basic_result
   template <mutability _mu, class U, class F>
@@ -76,7 +74,7 @@ public:
           && std::constructible_from<E, F>
   constexpr
   explicit(!(std::convertible_to<U, T> && std::convertible_to<F, E>))
-  basic_result(basic_result<_mu, U, F> const& res) {
+  basic_result(basic_result<_mu, U, F> const& res) { // NOLINT(google-explicit-constructor)
     if (res.is_ok())
       { this->storage_ = success<T>(res.unwrap()); }
     else
@@ -90,13 +88,12 @@ public:
           && std::constructible_from<E, F>
   constexpr
   explicit(!(std::convertible_to<U, T> && std::convertible_to<F, E>))
-  basic_result(basic_result<_mu, U, F>&& res) {
+  basic_result(basic_result<_mu, U, F>&& res) { // NOLINT(google-explicit-constructor)
     if (res.is_ok())
       { this->storage_ = success<T>(res.unwrap()); }
     else
       { this->storage_ = failure<E>(res.unwrap_err()); }
   }
-#pragma clang diagnostic pop
 
   /// @brief
   ///   copy assignment operator for convertible basic_result
@@ -168,13 +165,11 @@ public:
     return *this;
   }
 
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "google-explicit-constructor"
   /// @brief
   ///   explicit constructor for successful lvalue
   template <class U> requires std::constructible_from<T, const U&>
   constexpr explicit(!std::convertible_to<const U&, T>)
-  basic_result(success<U> const& ok)
+  basic_result(success<U> const& ok) // NOLINT(google-explicit-constructor)
     : storage_{std::in_place_type<success<T>>, std::in_place, ok.get()}
   {}
 
@@ -182,7 +177,7 @@ public:
   ///   explicit constructor for successful rvalue
   template <class U> requires std::constructible_from<T, U&&>
   constexpr explicit(!std::convertible_to<U&&, T>)
-  basic_result(success<U>&& ok)
+  basic_result(success<U>&& ok) // NOLINT(google-explicit-constructor)
     : storage_{std::in_place_type<success<T>>, std::in_place, static_cast<U&&>(ok.get())}
   {}
 
@@ -190,7 +185,7 @@ public:
   ///   non-explicit constructor for unsuccessful lvalue
   template <class F> requires std::constructible_from<E, F const&>
   constexpr explicit(!std::convertible_to<F const&, E>)
-  basic_result(failure<F> const& err)
+  basic_result(failure<F> const& err) // NOLINT(google-explicit-constructor)
     : storage_{std::in_place_type<failure<E>>, std::in_place, err.get()}
   {}
 
@@ -198,10 +193,9 @@ public:
   ///   non-explicit constructor for unsuccessful rvalue
   template <class F> requires std::constructible_from<E, F&&>
   constexpr explicit(!std::convertible_to<F&&, E>)
-  basic_result(failure<F>&& err)
+  basic_result(failure<F>&& err) // NOLINT(google-explicit-constructor)
     : storage_{std::in_place_type<failure<E>>, std::in_place, static_cast<F&&>(err.get())}
   {}
-#pragma clang diagnostic pop
 
   constexpr explicit basic_result(success<>)
     : storage_{std::in_place_type<success<>>, std::monostate{}}
@@ -311,9 +305,11 @@ public:
     -> basic_result<_mutability, std::remove_cvref_t<T> const&, std::remove_cvref_t<E> const&>
   {
     if ( is_ok() )
-      return basic_result<_mutability, std::remove_cvref_t<T> const&, std::remove_cvref_t<E> const&>{in_place_ok, std::get<success<T>>(storage_).get()};
+      return basic_result<_mutability, std::remove_cvref_t<T> const&, std::remove_cvref_t<E> const&>
+              { in_place_ok, std::get<success<T>>(storage_).get() };
     else
-      return basic_result<_mutability, std::remove_cvref_t<T> const&, std::remove_cvref_t<E> const&>{in_place_err, std::get<failure<E>>(storage_).get()};
+      return basic_result<_mutability, std::remove_cvref_t<T> const&, std::remove_cvref_t<E> const&>
+              { in_place_err, std::get<failure<E>>(storage_).get() };
   }
 
   /// @brief
@@ -333,9 +329,11 @@ public:
       "Error: result is immutable");
 
     if ( is_ok() )
-      return basic_result<mutability::immut, std::remove_reference_t<T>&, std::remove_reference_t<E>&>{in_place_ok, std::get<success<T>>(storage_).get()};
+      return basic_result<mutability::immut, std::remove_reference_t<T>&, std::remove_reference_t<E>&>
+              { in_place_ok, std::get<success<T>>(storage_).get() };
     else
-      return basic_result<mutability::immut, std::remove_reference_t<T>&, std::remove_reference_t<E>&>{in_place_err, std::get<failure<E>>(storage_).get()};
+      return basic_result<mutability::immut, std::remove_reference_t<T>&, std::remove_reference_t<E>&>
+              { in_place_err, std::get<failure<E>>(storage_).get() };
   }
 
   /// @brief
@@ -352,8 +350,10 @@ public:
   {
     using result_type = basic_result<_mutability, std::invoke_result_t<decltype(op), T>, E>;
     return is_ok()
-               ? static_cast<result_type>(success{std::invoke(std::forward<decltype(op)>(op), std::get<success<T>>(storage_).get())})
-               : static_cast<result_type>(failure{std::get<failure<E>>(storage_).get()});
+               ? static_cast<result_type>(success{
+                    std::invoke(std::forward<decltype(op)>(op), std::get<success<T>>(storage_).get())})
+               : static_cast<result_type>(failure{
+                    std::get<failure<E>>(storage_).get()});
   }
 
   /// @brief
@@ -370,8 +370,10 @@ public:
   {
     using result_type = basic_result<_mutability, std::invoke_result_t<decltype(op), T>, E>;
     return is_ok()
-               ? static_cast<result_type>(success{std::invoke(std::forward<decltype(op)>(op), std::get<success<T>>(storage_).get())})
-               : static_cast<result_type>(failure{std::get<failure<E>>(storage_).get()});
+               ? static_cast<result_type>(success{
+                    std::invoke(std::forward<decltype(op)>(op), std::get<success<T>>(storage_).get())})
+               : static_cast<result_type>(failure{
+                    std::get<failure<E>>(storage_).get()});
   }
 
   /// @brief
@@ -388,8 +390,10 @@ public:
   {
     using result_type = basic_result<_mutability, std::invoke_result_t<decltype(op), T>, E>;
     return is_ok()
-               ? static_cast<result_type>(success{std::invoke(std::forward<decltype(op)>(op), std::move(std::get<success<T>>(storage_).get()))})
-               : static_cast<result_type>(failure{std::move(std::get<failure<E>>(storage_).get())});
+               ? static_cast<result_type>(success{
+                    std::invoke(std::forward<decltype(op)>(op), std::move(std::get<success<T>>(storage_).get()))})
+               : static_cast<result_type>(failure{
+                    std::move(std::get<failure<E>>(storage_).get())});
   }
 
   /// @brief
@@ -404,13 +408,17 @@ public:
   /// @note
   ///   This function can be used to unpack a successful result while handling an error.
   constexpr auto map_or_else(std::regular_invocable<E&> auto&& _fallback, std::regular_invocable<T&> auto&& _map) &
-    noexcept(std::is_nothrow_invocable_v<decltype(_fallback), E&> && std::is_nothrow_invocable_v<decltype(_map), T&>)
+    noexcept(std::is_nothrow_invocable_v<decltype(_fallback), E&>
+          && std::is_nothrow_invocable_v<decltype(_map), T&>)
     requires std::common_with<std::invoke_result_t<decltype(_fallback), E&>, std::invoke_result_t<decltype(_map), T&>>
   {
-    using result_type = std::common_type_t<std::invoke_result_t<decltype(_map), T>, std::invoke_result_t<decltype(_fallback), E>>;
+    using result_type
+        = std::common_type_t<std::invoke_result_t<decltype(_map), T>, std::invoke_result_t<decltype(_fallback), E>>;
     return is_ok()
-               ? static_cast<result_type>(std::invoke(std::forward<decltype(_map)>(_map), std::get<success<T>>(storage_).get()))
-               : static_cast<result_type>(std::invoke(std::forward<decltype(_fallback)>(_fallback), std::get<failure<E>>(storage_).get()));
+               ? static_cast<result_type>(
+                       std::invoke(std::forward<decltype(_map)>(_map), std::get<success<T>>(storage_).get()))
+               : static_cast<result_type>(
+                       std::invoke(std::forward<decltype(_fallback)>(_fallback), std::get<failure<E>>(storage_).get()));
   }
 
   /// @brief
@@ -425,23 +433,28 @@ public:
   /// @note
   ///   This function can be used to unpack a successful result while handling an error.
   constexpr auto map_or_else(std::invocable<E const&> auto&& _fallback, std::invocable<T const&> auto&& _map) const&
-    noexcept(std::is_nothrow_invocable_v<decltype(_fallback), E const&> && std::is_nothrow_invocable_v<decltype(_map), T const&>)
-    requires std::common_with<std::invoke_result_t<decltype(_fallback), E const&>, std::invoke_result_t<decltype(_map), T const&>>
+    noexcept(std::is_nothrow_invocable_v<decltype(_fallback), E const&>
+          && std::is_nothrow_invocable_v<decltype(_map), T const&>)
+    requires std::common_with<
+                std::invoke_result_t<decltype(_fallback), E const&>,
+                std::invoke_result_t<decltype(_map), T const&>>
   {
-    using result_type = std::common_type_t<std::invoke_result_t<decltype(_map), T>, std::invoke_result_t<decltype(_fallback), E>>;
+    using result_type
+      = std::common_type_t<std::invoke_result_t<decltype(_map), T>, std::invoke_result_t<decltype(_fallback), E>>;
     return is_ok()
-               ? static_cast<result_type>(std::invoke(std::forward<decltype(_map)>(_map), std::get<success<T>>(storage_).get()))
-               : static_cast<result_type>(std::invoke(std::forward<decltype(_fallback)>(_fallback), std::get<failure<E>>(storage_).get()));
+               ? static_cast<result_type>(
+                       std::invoke(std::forward<decltype(_map)>(_map), std::get<success<T>>(storage_).get()))
+               : static_cast<result_type>(
+                       std::invoke(std::forward<decltype(_fallback)>(_fallback), std::get<failure<E>>(storage_).get()));
   }
 
   /// @brief
   ///   Maps a basic_result<T, E> to U by applying a function to a contained success value,
   ///   or a fallback function to a contained failure value.
+  ///   The result type of map and fallback function must have a common reference type.
   ///
-  /// @constrains
-  ///   _fallback: std::invocable<E&>,
-  ///   map: std::invocable<T&>,
-  ///   std::common_with<std::invoke_result_t<decltype(_fallback), E&>, std::invoke_result_t<decltype(_map), T&>>
+  /// @param [in] _fallback   invocable functor (E -> R).
+  /// @param [in] _map        invocable functor (T -> R).
   ///
   /// @note
   ///   This function can be used to unpack a successful result while handling an error.
@@ -495,8 +508,7 @@ public:
   ///   Maps a basic_result<T, E> to basic_result<T, F> by applying a function to a contained failure value,
   ///   leaving an success value untouched.
   ///
-  /// @constrains
-  ///   { std::invoke(op, unwrap_err()) }
+  /// @param [in] op  invocable functor (E -> R).
   ///
   /// @note
   ///   This function can be used to pass through a successful result while handling an error.
@@ -951,7 +963,7 @@ public:
   ///   Consumes the self argument then,
   ///   if success, returns the contained value,
   ///   otherwise; if Err, returns the default value for that type.
-  T unwrap_or_default() const requires (std::default_initializable<T>)
+  T unwrap_or_default() const requires std::default_initializable<T>
   {
     return is_ok() ? unwrap() : T();
   }
@@ -966,7 +978,8 @@ public:
     noexcept(std::is_nothrow_invocable_r_v<T, O, E>)
     requires std::is_invocable_r_v<T, O, E>
   {
-    return is_ok() ? std::get<success<T>>(storage_).get() : std::invoke(std::forward<O>(op), std::get<failure<E>>(storage_).get());
+    return is_ok() ? std::get<success<T>>(storage_).get()
+                   : std::invoke(std::forward<O>(op), std::get<failure<E>>(storage_).get());
   }
 
   /// @brief
@@ -1112,7 +1125,8 @@ public:
   ///   Unwraps a result, yielding the content of an failure.
   ///
   /// @panics
-  ///   Panics if the value is an success, with a panic message including the passed message, and the content of the success.
+  ///   Panics if the value is an success, with a panic message including the passed message,
+  ///   and the content of the success.
   force_add_const_t<E>&
   expect_err(std::string_view msg) const& {
     if ( is_ok() )
@@ -1125,7 +1139,8 @@ public:
   ///   Unwraps a result, yielding the content of an failure.
   ///
   /// @panics
-  ///   Panics if the value is an success, with a panic message including the passed message, and the content of the success.
+  ///   Panics if the value is an success, with a panic message including the passed message,
+  ///   and the content of the success.
   decltype(auto)
   expect_err(std::string_view msg) & {
     if ( is_ok() )
@@ -1271,7 +1286,9 @@ public:
           && std::regular_invocable<F&&, E&>
           && std::common_with<std::invoke_result_t<F&&, T&>, std::invoke_result_t<F&&, E&>>
   {
-    auto decay_copy = [](auto&& some) -> std::remove_const_t<std::remove_reference_t<decltype(some)>> { return std::forward<decltype(some)>(some); };
+    auto decay_copy = [](auto&& some)
+            -> std::remove_const_t<std::remove_reference_t<decltype(some)>>
+            { return std::forward<decltype(some)>(some); };
     return this->map_or_else(decay_copy(std::forward<F>(f)), decay_copy(std::forward<F>(f)));
   }
 
@@ -1282,18 +1299,25 @@ public:
           && std::regular_invocable<F&&, E const&>
           && std::common_with<std::invoke_result_t<F&&, T const&>, std::invoke_result_t<F&&, E const&>>
   {
-    auto decay_copy = [](auto&& some) -> std::remove_const_t<std::remove_reference_t<decltype(some)>> { return std::forward<decltype(some)>(some); };
+    auto decay_copy = [](auto&& some)
+            -> std::remove_const_t<std::remove_reference_t<decltype(some)>>
+            { return std::forward<decltype(some)>(some); };
     return this->map_or_else(decay_copy(std::forward<F>(f)), decay_copy(std::forward<F>(f)));
   }
 
   template <class F>
   auto map_anything_else(F&& f) const&
-    noexcept(std::is_nothrow_invocable_v<F, std::remove_reference_t<E>&&> && std::is_nothrow_invocable_v<F, std::remove_reference_t<T>&&>)
+    noexcept(std::is_nothrow_invocable_v<F, std::remove_reference_t<E>&&>
+          && std::is_nothrow_invocable_v<F, std::remove_reference_t<T>&&>)
     requires std::regular_invocable<F&&, std::remove_reference_t<T>&&>
           && std::regular_invocable<F&&, std::remove_reference_t<E>&&>
-          && std::common_with<std::invoke_result_t<F&&, std::remove_reference_t<T>&&>, std::invoke_result_t<F&&, std::remove_reference_t<E>&&>>
+          && std::common_with<
+                  std::invoke_result_t<F&&, std::remove_reference_t<T>&&>,
+                  std::invoke_result_t<F&&, std::remove_reference_t<E>&&>>
   {
-    auto decay_copy = [](auto&& some) -> std::remove_const_t<std::remove_reference_t<decltype(some)>> { return std::forward<decltype(some)>(some); };
+    auto decay_copy = [](auto&& some)
+            -> std::remove_const_t<std::remove_reference_t<decltype(some)>>
+            { return std::forward<decltype(some)>(some); };
     return std::move(*this).map_or_else(decay_copy(std::forward<F>(f)), decay_copy(std::forward<F>(f)));
   }
 

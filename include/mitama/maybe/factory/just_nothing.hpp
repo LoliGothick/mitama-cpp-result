@@ -3,7 +3,7 @@
 #include <mitama/mitamagic/is_interface_of.hpp>
 #include <mitama/maybe/fwd/maybe_fwd.hpp>
 #include <mitama/result/detail/meta.hpp>
-#include <mitama/result/traits/impl_traits.hpp>
+#include <mitama/concepts/formattable.hpp>
 #include <mitama/concepts/display.hpp>
 #include <mitama/concepts/satisfy.hpp>
 #include <mitama/cmp/ord.hpp>
@@ -60,18 +60,18 @@ public:
 
     template <std::constructible_from<T> U> requires (!std::same_as<U, just_t>)
     constexpr explicit(!(std::constructible_from<T, U> && std::convertible_to<U, T>))
-    just_t(U&& u)
+    just_t(U&& u) // NOLINT(google-explicit-constructor,bugprone-forwarding-reference-overload)
         noexcept(std::is_nothrow_constructible_v<T, U>)
         : x(std::forward<U>(u)) {}
 
     template <std::constructible_from<T> U> requires (!std::same_as<T, U>)
     explicit(!(std::constructible_from<T, U> && std::convertible_to<U, T>))
-    constexpr just_t(const just_t<U> &t) noexcept(std::is_nothrow_constructible_v<T, const U&>)
+    constexpr just_t(const just_t<U> &t) noexcept(std::is_nothrow_constructible_v<T, const U&>) // NOLINT(google-explicit-constructor)
         : x(t.get()) {}
 
     template <std::constructible_from<T> U> requires (!std::same_as<T, U>)
     explicit(!(std::constructible_from<T, U> && std::convertible_to<U, T>))
-    constexpr just_t(just_t<U> &&t) noexcept(std::is_nothrow_constructible_v<T, U&&>)
+    constexpr just_t(just_t<U> &&t) noexcept(std::is_nothrow_constructible_v<T, U&&>) // NOLINT(google-explicit-constructor)
         : x(static_cast<U&&>(t.get())) {}
 
     template <class... Args> requires std::constructible_from<T, Args&&...>
@@ -137,9 +137,9 @@ public:
     template <class Derived> requires (std::is_base_of_v<T, Derived>)
     explicit constexpr just_t(std::in_place_t, Derived& derived) : x(derived) {}
 
-    explicit constexpr just_t(just_t &&) = default;
-    explicit constexpr just_t(just_t const&) = default;
-    constexpr just_t& operator=(just_t &&) = default;
+    constexpr just_t(just_t &&) noexcept = default;
+    constexpr just_t(just_t const&) = default;
+    constexpr just_t& operator=(just_t &&) noexcept = default;
     constexpr just_t& operator=(just_t const&) = default;
 
     constexpr T& get() & { return x.get(); }

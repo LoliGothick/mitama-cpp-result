@@ -6,7 +6,7 @@
 #include <mitama/result/factory/failure.hpp>
 #include <mitama/result/detail/fwd.hpp>
 #include <mitama/result/detail/meta.hpp>
-#include <mitama/result/traits/impl_traits.hpp>
+#include <mitama/concepts/formattable.hpp>
 #include <mitama/maybe/fwd/maybe_fwd.hpp>
 #include <mitama/maybe/factory/just_nothing.hpp>
 #include <mitama/concepts/display.hpp>
@@ -37,16 +37,16 @@ template <class T>
     requires (std::is_object_v<std::remove_cvref_t<T>>)
           && (std::negation_v<std::is_array<std::remove_cvref_t<T>>>)
 class [[nodiscard("warning: unused result which must be used")]] maybe
-  : public cmp::ord<maybe<T>, maybe>
-  , public cmp::ord<maybe<T>, just_t>
-  , public cmp::rel<maybe<T>, nothing_t>
-  , public std::conditional_t<is_nothing_v<T>, detail::_empty, cmp::rel<maybe<T>, T>>
+    : public cmp::ord<maybe<T>, maybe>
+    , public cmp::ord<maybe<T>, just_t>
+    , public cmp::rel<maybe<T>, nothing_t>
+    , public std::conditional_t<is_nothing_v<T>, detail::_empty, cmp::rel<maybe<T>, T>>
 {
     std::variant<nothing_t, just_t<T>> storage_;
     template<class, class> friend class maybe_replace_injector;
     template <class> friend class maybe;
 
-  public:
+public:
     using value_type = std::remove_reference_t<T>;
     using reference_type = std::add_lvalue_reference_t<value_type>;
 
@@ -84,7 +84,9 @@ class [[nodiscard("warning: unused result which must be used")]] maybe
     constexpr maybe(just_t<_just_detail::forward_mode<T>, Args...>&& fwd)
         : maybe()
     {
-        std::apply([&](auto&&... args){ storage_.template emplace<just_t<T>>(std::in_place, std::forward<decltype(args)>(args)...); }, std::move(fwd)());
+        std::apply([&](auto&&... args){
+          storage_.template emplace<just_t<T>>(std::in_place, std::forward<decltype(args)>(args)...);
+        }, std::move(fwd)());
     }
 
     template <class... Args>
@@ -92,7 +94,9 @@ class [[nodiscard("warning: unused result which must be used")]] maybe
     constexpr maybe(just_t<_just_detail::forward_mode<>, Args...>&& fwd)
         : maybe()
     {
-        std::apply([&](auto&&... args){ storage_.template emplace<just_t<T>>(std::in_place, std::forward<decltype(args)>(args)...); }, std::move(fwd)());
+        std::apply([&](auto&&... args){
+          storage_.template emplace<just_t<T>>(std::in_place, std::forward<decltype(args)>(args)...);
+        }, std::move(fwd)());
     }
 
     template <class U>
@@ -161,9 +165,10 @@ class [[nodiscard("warning: unused result which must be used")]] maybe
     template <class... Args>
         requires std::constructible_from<T, Args&&...>
     constexpr auto& get_or_emplace(Args&&... args) & {
-        return is_just()
-            ? unwrap()
-            : (storage_.template emplace<just_t<T>>(std::in_place, std::forward<Args>(args)...), unwrap());
+        if ( is_nothing() ) {
+            storage_.template emplace<just_t<T>>(std::in_place, std::forward<Args>(args)...);
+        }
+        return unwrap();
     }
 
     template <class F, class... Args>
@@ -171,9 +176,11 @@ class [[nodiscard("warning: unused result which must be used")]] maybe
               && std::constructible_from<T, std::invoke_result_t<F&&, Args&&...>>
     constexpr value_type&
     get_or_emplace_with(F&& f, Args&&... args) & {
-        return is_just()
-            ? unwrap()
-            : (storage_.template emplace<just_t<T>>(std::in_place, std::invoke(std::forward<F>(f), std::forward<Args>(args)...)), unwrap());
+        if ( is_nothing() ) {
+            storage_.template emplace<just_t<T>>(
+                    std::in_place, std::invoke(std::forward<F>(f), std::forward<Args>(args)...));
+        }
+        return unwrap();
     }
 
     template <class... Args>
@@ -191,7 +198,8 @@ class [[nodiscard("warning: unused result which must be used")]] maybe
               && std::constructible_from<T, std::invoke_result_t<F, Args&&...>>
     constexpr maybe replace_with(F&& f, Args&&... args) & {
         auto old = static_cast<maybe<T>*>(this)->as_ref().cloned();
-        static_cast<maybe<T>*>(this)->storage_.template emplace<just_t<T>>(std::invoke(std::forward<F>(f), std::forward<Args>(args)...));
+        static_cast<maybe<T>*>(this)->storage_.template emplace<just_t<T>>(
+                std::invoke(std::forward<F>(f), std::forward<Args>(args)...));
         return old;
     }
 
@@ -199,7 +207,9 @@ class [[nodiscard("warning: unused result which must be used")]] maybe
         requires (std::is_lvalue_reference_v<T>)
               && std::copy_constructible<T>
     {
-        auto decay_copy = [](auto&& some) -> std::remove_const_t<std::remove_reference_t<T>> { return std::forward<decltype(some)>(some); };
+        auto decay_copy = [](auto&& some)
+                -> std::remove_const_t<std::remove_reference_t<T>>
+                { return std::forward<decltype(some)>(some); };
         return static_cast<maybe<T>const*>(this)->is_just()
             ? maybe<std::remove_reference_t<T>>{just(decay_copy(static_cast<maybe<T>const*>(this)->unwrap()))}
             : nothing;
@@ -207,7 +217,7 @@ class [[nodiscard("warning: unused result which must be used")]] maybe
 
     constexpr auto flatten() const&
         requires (is_maybe<std::decay_t<T>>::value)
-    { return is_just() ? unwrap().as_ref().cloned() : nothing; }
+        { return is_just() ? unwrap().as_ref().cloned() : nothing; }
 
     // Since C++20, enable initialize aggregates from a parenthesized list of values;
     // http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0960r3.html
@@ -219,33 +229,29 @@ class [[nodiscard("warning: unused result which must be used")]] maybe
     ///   if just, returns the contained value,
     ///   otherwise; if nothing, returns the default value for that type.
     constexpr T unwrap_or_default() const requires (std::default_initializable<T>)
-    {
-        return is_just() ? unwrap() : T();
-    }
+        { return is_just() ? unwrap() : T(); }
 
     constexpr decltype(auto) unwrap_or(std::common_with<T&> auto&& def) & {
         return is_just() ? unwrap() : std::forward<decltype(def)>(def);
     }
 
-    constexpr decltype(auto) unwrap_or(std::common_with<T const&> auto&& def) const& {
-        return is_just() ? unwrap() : std::forward<decltype(def)>(def);
-    }
+    constexpr decltype(auto) unwrap_or(std::common_with<T const&> auto&& def) const&
+        { return is_just() ? unwrap() : std::forward<decltype(def)>(def); }
 
-    constexpr decltype(auto) unwrap_or(std::common_with<T&&> auto&& def) && {
-        return is_just() ? std::move(unwrap()) : std::forward<decltype(def)>(def);
-    }
+    constexpr decltype(auto) unwrap_or(std::common_with<T&&> auto&& def) &&
+        { return is_just() ? std::move(unwrap()) : std::forward<decltype(def)>(def); }
 
     constexpr decltype(auto) unwrap_or_else(std::invocable auto&& f) &
         requires std::common_with<std::invoke_result_t<decltype(f)>, T&>
-    { return is_just() ? unwrap() : std::invoke(std::forward<decltype(f)>(f)); }
+        { return is_just() ? unwrap() : std::invoke(std::forward<decltype(f)>(f)); }
 
     constexpr decltype(auto) unwrap_or_else(std::invocable auto&& f) const&
         requires std::common_with<std::invoke_result_t<decltype(f)>, T const&>
-    { return is_just() ? unwrap() : std::invoke(std::forward<decltype(f)>(f)); }
+        { return is_just() ? unwrap() : std::invoke(std::forward<decltype(f)>(f)); }
 
     constexpr decltype(auto) unwrap_or_else(std::invocable auto&& f) &&
         requires std::common_with<std::invoke_result_t<decltype(f)>, T&&>
-    { return is_just() ? std::move(unwrap()) : std::invoke(std::forward<decltype(f)>(f)); }
+        { return is_just() ? std::move(unwrap()) : std::invoke(std::forward<decltype(f)>(f)); }
 
     constexpr auto map(std::invocable<value_type&> auto&& f) & {
         return is_just()
@@ -400,32 +406,40 @@ class [[nodiscard("warning: unused result which must be used")]] maybe
         return this->xdisj(rhs);
     }
 
-    constexpr auto and_then(std::regular_invocable<T&> auto&& f) & requires (is_maybe<std::decay_t<std::invoke_result_t<decltype(f), T&>>>::value) {
-        return is_just() ? std::invoke(std::forward<decltype(f)>(f), unwrap()) : nothing;
-    }
+    constexpr auto and_then(std::regular_invocable<T&> auto&& f) &
+        requires (is_maybe<std::decay_t<std::invoke_result_t<decltype(f), T&>>>::value)
+        { return is_just() ? std::invoke(std::forward<decltype(f)>(f), unwrap()) : nothing; }
 
-    constexpr auto and_then(std::regular_invocable<T const&> auto&& f) const& requires (is_maybe<std::decay_t<std::invoke_result_t<decltype(f), T const&>>>::value) {
-        return is_just() ? std::invoke(std::forward<decltype(f)>(f), unwrap()) : nothing;
-    }
+    constexpr auto and_then(std::regular_invocable<T const&> auto&& f) const&
+        requires (is_maybe<std::decay_t<std::invoke_result_t<decltype(f), T const&>>>::value)
+        { return is_just() ? std::invoke(std::forward<decltype(f)>(f), unwrap()) : nothing; }
 
-    constexpr auto and_then(std::regular_invocable<T&&> auto&& f) && requires (is_maybe<std::decay_t<std::invoke_result_t<decltype(f), T&&>>>::value) {
-        return is_just() ? std::invoke(std::forward<decltype(f)>(f), static_cast<T&&>(unwrap())) : nothing;
-    }
+    constexpr auto and_then(std::regular_invocable<T&&> auto&& f) &&
+        requires (is_maybe<std::decay_t<std::invoke_result_t<decltype(f), T&&>>>::value)
+        { return is_just() ? std::invoke(std::forward<decltype(f)>(f), static_cast<T&&>(unwrap())) : nothing; }
 
-    constexpr auto or_else(std::regular_invocable auto&& f) & requires (is_maybe_with<std::decay_t<std::invoke_result_t<decltype(f)>>, T>::value) {
-        return is_just() ? just(unwrap()) : std::invoke(std::forward<decltype(f)>(f));
-    }
+    constexpr auto or_else(std::regular_invocable auto&& f) &
+        requires (is_maybe_with<std::decay_t<std::invoke_result_t<decltype(f)>>, T>::value)
+        { return is_just() ? just(unwrap()) : std::invoke(std::forward<decltype(f)>(f)); }
 
-    constexpr auto or_else(std::regular_invocable auto&& f) const& requires (is_maybe_with<std::decay_t<std::invoke_result_t<decltype(f)>>, T>::value) {
-        return is_just() ? just(unwrap()) : std::invoke(std::forward<decltype(f)>(f));
-    }
+    constexpr auto or_else(std::regular_invocable auto&& f) const&
+        requires (is_maybe_with<std::decay_t<std::invoke_result_t<decltype(f)>>, T>::value)
+        { return is_just() ? just(unwrap()) : std::invoke(std::forward<decltype(f)>(f)); }
 
-    constexpr auto or_else(std::regular_invocable auto&& f) && requires (is_maybe_with<std::decay_t<std::invoke_result_t<decltype(f)>>, T>::value) {
-        return is_just() ? just(static_cast<T&&>(unwrap())) : std::invoke(std::forward<decltype(f)>(f));
-    }
+    constexpr auto or_else(std::regular_invocable auto&& f) &&
+        requires (is_maybe_with<std::decay_t<std::invoke_result_t<decltype(f)>>, T>::value)
+        { return is_just() ? just(static_cast<T&&>(unwrap())) : std::invoke(std::forward<decltype(f)>(f)); }
 
-    constexpr auto transpose() const& requires (is_result_v<std::decay_t<T>>) {
-        using result_t = basic_result<std::decay_t<T>::mutability_v, maybe<typename std::decay_t<T>::ok_type>, typename std::decay_t<T>::err_type>;
+    constexpr auto transpose() const&
+        requires (is_result_v<std::decay_t<T>>)
+    {
+        using result_t
+          = basic_result<
+                  std::decay_t<T>::mutability_v,
+                  maybe<typename std::decay_t<T>::ok_type>,
+                          typename std::decay_t<T>::err_type
+          >;
+
         return this->is_nothing()
             ? result_t{success{nothing}}
             : this->unwrap().is_ok()
@@ -433,30 +447,22 @@ class [[nodiscard("warning: unused result which must be used")]] maybe
                 : result_t{in_place_err, this->unwrap().unwrap_err()};
     }
 
-    constexpr decltype(auto) and_finally(std::invocable<value_type&> auto&& f) & {
-        if (is_just()) std::invoke(std::forward<decltype(f)>(f), unwrap());
-    }
+    constexpr decltype(auto) and_finally(std::invocable<value_type&> auto&& f) &
+        { if (is_just()) std::invoke(std::forward<decltype(f)>(f), unwrap()); }
 
-    constexpr decltype(auto) and_finally(std::invocable<value_type const&> auto&& f) const& {
-        if (is_just()) std::invoke(std::forward<decltype(f)>(f), unwrap());
-    }
+    constexpr decltype(auto) and_finally(std::invocable<value_type const&> auto&& f) const&
+        { if (is_just()) std::invoke(std::forward<decltype(f)>(f), unwrap()); }
 
-    constexpr decltype(auto) and_finally(std::invocable<T&&> auto&& f) && {
-        if (is_just()) std::invoke(std::forward<decltype(f)>(f), static_cast<T&&>(unwrap()));
-    }
+    constexpr decltype(auto) and_finally(std::invocable<T&&> auto&& f) &&
+        { if (is_just()) std::invoke(std::forward<decltype(f)>(f), static_cast<T&&>(unwrap())); }
 
-    constexpr decltype(auto) or_finally(std::invocable auto&& f) {
-        if (is_nothing()) std::invoke(std::forward<decltype(f)>(f));
-    }
+    constexpr decltype(auto) or_finally(std::invocable auto&& f)
+        { if (is_nothing()) std::invoke(std::forward<decltype(f)>(f)); }
 
     template <class F>
     constexpr
-    std::enable_if_t<
-        std::disjunction_v<
-            std::is_invocable<F, value_type&>,
-            std::is_invocable<F>>,
-    maybe&>
-    and_peek(F&& f) &
+    auto and_peek(F&& f) & -> maybe&
+        requires std::invocable<F, value_type&> || std::invocable<F>
     {
         if (is_just()) {
             if constexpr (std::is_invocable_v<F, value_type&>) {
@@ -538,35 +544,35 @@ class [[nodiscard("warning: unused result which must be used")]] maybe
         return std::move(*this);
     }
 
-  template <std::totally_ordered_with<T> U>
-  constexpr std::strong_ordering operator<=>(maybe<U> const& other) const {
-    if (this->is_just() && other.is_nothing()) return std::strong_ordering::greater;
-    else if (this->is_nothing() && other.is_just()) return std::strong_ordering::less;
-    else if (this->is_just() && other.is_just()) {
-      if (this->unwrap() < other.unwrap()) return std::strong_ordering::less;
-      if (this->unwrap() > other.unwrap()) return std::strong_ordering::greater;
-      else return std::strong_ordering::equivalent;
+    template <std::totally_ordered_with<T> U>
+    constexpr std::strong_ordering operator<=>(maybe<U> const& other) const {
+        if (this->is_just() && other.is_nothing()) return std::strong_ordering::greater;
+        else if (this->is_nothing() && other.is_just()) return std::strong_ordering::less;
+        else if (this->is_just() && other.is_just()) {
+            if (this->unwrap() < other.unwrap()) return std::strong_ordering::less;
+            if (this->unwrap() > other.unwrap()) return std::strong_ordering::greater;
+            else return std::strong_ordering::equivalent;
+        }
+        else {
+            return std::strong_ordering::equivalent;
+        }
     }
-    else {
-      return std::strong_ordering::equivalent;
-    }
-  }
 
   template <std::totally_ordered_with<T> U>
   constexpr std::strong_ordering operator<=>(just_t<U> const& other) const {
-    if (this->is_nothing()) return std::strong_ordering::less;
-    else {
-      if (this->unwrap() < other.get()) return std::strong_ordering::less;
-      if (this->unwrap() > other.get()) return std::strong_ordering::greater;
-      else return std::strong_ordering::equivalent;
-    }
+      if (this->is_nothing()) return std::strong_ordering::less;
+      else {
+          if (this->unwrap() < other.get()) return std::strong_ordering::less;
+          if (this->unwrap() > other.get()) return std::strong_ordering::greater;
+          else return std::strong_ordering::equivalent;
+      }
   }
 
-  constexpr std::strong_ordering operator<=>(nothing_t const& other) const
-  { return this->is_nothing() ? std::strong_ordering::equivalent : std::strong_ordering::greater; }
+    constexpr std::strong_ordering operator<=>(nothing_t const& other) const
+        { return this->is_nothing() ? std::strong_ordering::equivalent : std::strong_ordering::greater; }
 
-  constexpr std::strong_ordering operator<=>(value_type const& other) const
-  { return *this <=> just(other); }
+    constexpr std::strong_ordering operator<=>(value_type const& other) const
+        { return *this <=> just(other); }
 
 };
 
