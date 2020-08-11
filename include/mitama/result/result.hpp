@@ -254,6 +254,16 @@ public:
   constexpr bool is_err() const noexcept { return std::holds_alternative<failure<E>>(storage_); }
 
   /// @brief
+  ///   Returns true if the result is an success value containing the given value.
+  [[nodiscard("Warning: Do not discard the return value of `contains()`.")]]
+  constexpr bool contains(T const& x) const noexcept { return *this == success(x); }
+
+  /// @brief
+  ///   Returns true if the result is an failure value containing the given value.
+  [[nodiscard("Warning: Do not discard the return value of `contains_err()`.")]]
+  constexpr bool contains_err(E const& x) const noexcept { return *this == failure(x); }
+
+  /// @brief
   ///   Converts from basic_result to bool.
   ///
   /// @note

@@ -124,6 +124,22 @@ TEST_CASE("is_err() test", "[result][is_err]"){
   REQUIRE(y.is_err() == true);
 }
 
+TEST_CASE("contains() test", "[result][contains]"){
+  result<u32, str> x = success(42);
+  REQUIRE(x.contains(42));
+
+  result<u32, str> y = failure("error"s);
+  REQUIRE_FALSE(y.contains(42));
+}
+
+TEST_CASE("contains_err() test", "[result][contains_err]"){
+  result<u32, str> x = success(42);
+  REQUIRE_FALSE(x.contains_err("error"));
+
+  result<u32, str> y = failure("error"s);
+  REQUIRE(y.contains_err("error"));
+}
+
 TEST_CASE("ok() test", "[result][ok]"){
   result<u32, str> x = success(2);
   REQUIRE(x.ok() == just(2u));
