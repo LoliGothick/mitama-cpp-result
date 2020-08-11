@@ -74,7 +74,7 @@ public:
   }
 
   template <class T>
-  constexpr std::strong_ordering operator<=>(success<T> const& other) const {
+  constexpr std::strong_ordering operator<=>(success<T> const&) const {
     return std::strong_ordering::less;
   }
 

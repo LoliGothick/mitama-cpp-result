@@ -568,7 +568,7 @@ public:
       }
   }
 
-    constexpr std::strong_ordering operator<=>(nothing_t const& other) const
+    constexpr std::strong_ordering operator<=>(nothing_t const&) const
         { return this->is_nothing() ? std::strong_ordering::equivalent : std::strong_ordering::greater; }
 
     constexpr std::strong_ordering operator<=>(value_type const& other) const

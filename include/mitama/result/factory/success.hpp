@@ -90,7 +90,7 @@ public:
   }
 
   template <class E>
-  constexpr std::strong_ordering operator<=>(failure<E> const& other) const {
+  constexpr std::strong_ordering operator<=>(failure<E> const&) const {
     return std::strong_ordering::greater;
   }
 
