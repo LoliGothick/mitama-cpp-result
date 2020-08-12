@@ -558,15 +558,15 @@ public:
         }
     }
 
-  template <std::totally_ordered_with<T> U>
-  constexpr std::strong_ordering operator<=>(just_t<U> const& other) const {
-      if (this->is_nothing()) return std::strong_ordering::less;
-      else {
-          if (this->unwrap() < other.get()) return std::strong_ordering::less;
-          if (this->unwrap() > other.get()) return std::strong_ordering::greater;
-          else return std::strong_ordering::equivalent;
-      }
-  }
+    template <std::totally_ordered_with<T> U>
+    constexpr std::strong_ordering operator<=>(just_t<U> const& other) const {
+        if (this->is_nothing()) return std::strong_ordering::less;
+        else {
+            if (this->unwrap() < other.get()) return std::strong_ordering::less;
+            if (this->unwrap() > other.get()) return std::strong_ordering::greater;
+            else return std::strong_ordering::equivalent;
+        }
+    }
 
     constexpr std::strong_ordering operator<=>(nothing_t const&) const
         { return this->is_nothing() ? std::strong_ordering::equivalent : std::strong_ordering::greater; }

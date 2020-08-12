@@ -472,10 +472,15 @@ public:
     noexcept(std::is_nothrow_invocable_v<decltype(_fallback), E&&> && std::is_nothrow_invocable_v<decltype(_map), T&&>)
     requires std::common_with<std::invoke_result_t<decltype(_fallback), E&&>, std::invoke_result_t<decltype(_map), T&&>>
   {
-    using result_type = std::common_type_t<std::invoke_result_t<decltype(_map), T>, std::invoke_result_t<decltype(_fallback), E>>;
+    using result_type
+        = std::common_type_t<std::invoke_result_t<decltype(_map), T>, std::invoke_result_t<decltype(_fallback), E>>;
     return is_ok()
-               ? static_cast<result_type>(std::invoke(std::forward<decltype(_map)>(_map), std::move(std::get<success<T>>(storage_).get())))
-               : static_cast<result_type>(std::invoke(std::forward<decltype(_fallback)>(_fallback), std::move(std::get<failure<E>>(storage_).get())));
+               ? static_cast<result_type>(
+                       std::invoke(std::forward<decltype(_map)>(_map), std::move(std::get<success<T>>(storage_).get())))
+               : static_cast<result_type>(
+                       std::invoke(
+                               std::forward<decltype(_fallback)>(_fallback),
+                               std::move(std::get<failure<E>>(storage_).get())));
   }
 
   /// @brief
@@ -492,7 +497,8 @@ public:
   {
     using result_type = basic_result<_mutability, T, std::invoke_result_t<decltype(op), E>>;
     return is_err()
-               ? static_cast<result_type>(failure{std::invoke(std::forward<decltype(op)>(op), std::get<failure<E>>(storage_).get())})
+               ? static_cast<result_type>(failure{
+                    std::invoke(std::forward<decltype(op)>(op), std::get<failure<E>>(storage_).get())})
                : static_cast<result_type>(success{std::get<success<T>>(storage_).get()});
   }
 
@@ -510,7 +516,8 @@ public:
   {
     using result_type = basic_result<_mutability, T, std::invoke_result_t<decltype(op), E>>;
     return is_err()
-               ? static_cast<result_type>(failure{std::invoke(std::forward<decltype(op)>(op), std::get<failure<E>>(storage_).get())})
+               ? static_cast<result_type>(failure{
+                    std::invoke(std::forward<decltype(op)>(op), std::get<failure<E>>(storage_).get())})
                : static_cast<result_type>(success{std::get<success<T>>(storage_).get()});
   }
 
@@ -527,7 +534,8 @@ public:
   {
     using result_type = basic_result<_mutability, T, std::invoke_result_t<decltype(op), E>>;
     return is_err()
-               ? static_cast<result_type>(failure{std::invoke(std::forward<decltype(op)>(op), std::move(std::get<failure<E>>(storage_).get()))})
+               ? static_cast<result_type>(failure{
+                    std::invoke(std::forward<decltype(op)>(op), std::move(std::get<failure<E>>(storage_).get()))})
                : static_cast<result_type>(success{std::move(std::get<success<T>>(storage_).get())});
   }
 
@@ -696,7 +704,13 @@ public:
   ///   creating a new one with a reference to the original one,
   ///   additionally coercing the success arm of the basic_result via `operator*`.
   constexpr auto indirect_ok() & requires (dereferencable<T>) {
-    using indirect_ok_result = basic_result<_mutability, std::remove_reference_t<deref_type_t<T>>&, std::remove_reference_t<E>&>;
+    using indirect_ok_result
+        = basic_result<
+                _mutability,
+                std::remove_reference_t<deref_type_t<T>>&,
+                std::remove_reference_t<E>&
+        >;
+
     if ( is_ok() ) {
       return indirect_ok_result{in_place_ok, *unwrap()};
     }
@@ -716,7 +730,13 @@ public:
   ///   creating a new one with a reference to the original one,
   ///   additionally coercing the success arm of the basic_result via `operator*`.
   constexpr auto indirect_ok() const& requires (dereferencable<T>) {
-    using const_indirect_ok_result = basic_result<_mutability, std::remove_cvref_t<deref_type_t<T>> const&, std::remove_cvref_t<E> const&>;
+    using const_indirect_ok_result
+        = basic_result<
+                _mutability,
+                std::remove_cvref_t<deref_type_t<T>> const&,
+                std::remove_cvref_t<E> const&
+        >;
+
     if ( is_ok() ) {
       return const_indirect_ok_result{in_place_ok, *unwrap()};
     }
@@ -739,7 +759,13 @@ public:
   /// @warning
   ///   Contained reference may be exhausted because of original result is rvalue.
   constexpr auto indirect_ok() && requires (dereferencable<T>) {
-    using dangling_indirect_ok_result = basic_result<_mutability, dangling<std::reference_wrapper<std::remove_reference_t<deref_type_t<T>>>>, dangling<std::reference_wrapper<std::remove_reference_t<E>>>>;
+    using dangling_indirect_ok_result
+        = basic_result<
+                _mutability,
+                dangling<std::reference_wrapper<std::remove_reference_t<deref_type_t<T>>>>,
+                dangling<std::reference_wrapper<std::remove_reference_t<E>>>
+        >;
+
     if ( is_ok() ) {
       return dangling_indirect_ok_result{in_place_ok, std::ref(*unwrap())};
     }
@@ -761,7 +787,13 @@ public:
   ///   creating a new one with a reference to the original one,
   ///   additionally coercing the failure arm of the basic_result via `operator*`.
   constexpr auto indirect_err() & requires (dereferencable<E>) {
-    using indirect_err_result = basic_result<_mutability, std::remove_reference_t<T>&, std::remove_reference_t<deref_type_t<E>>&>;
+    using indirect_err_result
+        = basic_result<
+                _mutability,
+                std::remove_reference_t<T>&,
+                std::remove_reference_t<deref_type_t<E>>&
+        >;
+
     if ( is_ok() ) {
       return indirect_err_result{in_place_ok, unwrap()};
     }
@@ -781,7 +813,13 @@ public:
   ///   creating a new one with a reference to the original one,
   ///   additionally coercing the failure arm of the basic_result via `operator*`.
   constexpr auto indirect_err() const& requires (dereferencable<E>) {
-    using const_indirect_err_result = basic_result<_mutability, std::remove_cvref_t<T> const&, std::remove_cvref_t<deref_type_t<E>> const&>;
+    using const_indirect_err_result
+        = basic_result<
+                _mutability,
+                std::remove_cvref_t<T> const&,
+                std::remove_cvref_t<deref_type_t<E>> const&
+        >;
+
     if ( is_ok() ) {
       return const_indirect_err_result{in_place_ok, unwrap()};
     }
@@ -804,7 +842,13 @@ public:
   /// @warning
   ///   Contained reference may be exhausted because of original result is rvalue.
   constexpr auto indirect_err() && requires (dereferencable<E>) {
-    using dangling_indirect_err_result = basic_result<_mutability, dangling<std::remove_reference_t<T>&>, dangling<std::reference_wrapper<std::remove_reference_t<deref_type_t<E>>>>>;
+    using dangling_indirect_err_result
+        = basic_result<
+                _mutability,
+                dangling<std::remove_reference_t<T>&>,
+                dangling<std::reference_wrapper<std::remove_reference_t<deref_type_t<E>>>>
+        >;
+
     if ( is_ok() ) {
       return dangling_indirect_err_result{in_place_ok, unwrap()};
     }
@@ -827,7 +871,13 @@ public:
   ///   creating a new one with a reference to the original one,
   ///   additionally coercing the success and failure arm of the basic_result via `operator*`.
   constexpr auto indirect() & requires (dereferencable<E> && dereferencable<E>) {
-    using indirect_result = basic_result<_mutability, std::remove_reference_t<deref_type_t<T>>&, std::remove_reference_t<deref_type_t<E>>&>;
+    using indirect_result
+        = basic_result<
+                _mutability,
+                std::remove_reference_t<deref_type_t<T>>&,
+                std::remove_reference_t<deref_type_t<E>>&
+        >;
+
     if ( is_ok() ) {
       return indirect_result{in_place_ok, *unwrap()};
     }
@@ -848,7 +898,13 @@ public:
   ///   creating a new one with a reference to the original one,
   ///   additionally coercing the success and failure arm of the basic_result via `operator*`.
   constexpr auto indirect() const& requires (dereferencable<E> && dereferencable<E>) {
-    using const_indirect_result = basic_result<_mutability, std::remove_cvref_t<deref_type_t<T>> const&, std::remove_cvref_t<deref_type_t<E>> const&>;
+    using const_indirect_result
+        = basic_result<
+                _mutability,
+                std::remove_cvref_t<deref_type_t<T>> const&,
+                std::remove_cvref_t<deref_type_t<E>> const&
+        >;
+
     if ( is_ok() ) {
       return const_indirect_result{in_place_ok, *unwrap()};
     }
@@ -872,7 +928,13 @@ public:
   /// @warning
   ///   Contained reference may be exhausted because of original result is rvalue.
   constexpr auto indirect() && requires (dereferencable<E> && dereferencable<E>) {
-    using dangling_indirect_result = basic_result<_mutability, dangling<std::reference_wrapper<std::remove_reference_t<deref_type_t<T>>>>, dangling<std::reference_wrapper<std::remove_reference_t<deref_type_t<E>>>>>;
+    using dangling_indirect_result
+        = basic_result<
+                _mutability,
+                dangling<std::reference_wrapper<std::remove_reference_t<deref_type_t<T>>>>,
+                dangling<std::reference_wrapper<std::remove_reference_t<deref_type_t<E>>>>
+        >;
+
     if ( is_ok() ) {
       return dangling_indirect_result{in_place_ok, std::ref(*unwrap())};
     }
