@@ -43,13 +43,12 @@ class [[nodiscard("warning: unused result which must be used")]] basic_result
   std::variant<success<T>, failure<E>> storage_;
   /// friend accessors
   template <mutability, class, class>
+  requires (std::is_object_v<std::remove_cvref_t<T>>)
+    && (std::is_object_v<std::remove_cvref_t<E>>)
+    && (std::negation_v<std::is_array<std::remove_cvref_t<T>>>)
+    && (std::negation_v<std::is_array<std::remove_cvref_t<E>>>)
   friend class basic_result;
   /// private aliases
-  template <class... Requires>
-  using where = std::enable_if_t<std::conjunction_v<Requires...>, std::nullptr_t>;
-  static constexpr std::nullptr_t required = nullptr;
-  template <mutability _mut, class T_, class E_>
-  using not_self = std::negation<std::is_same<basic_result, basic_result<_mut, T_, E_>>>;
 public:
   /// associated types
   using ok_type = T;

@@ -40,7 +40,7 @@ class [[nodiscard("warning: unused result which must be used")]] maybe
     : public cmp::ord<maybe<T>, maybe>
     , public cmp::ord<maybe<T>, just_t>
     , public cmp::rel<maybe<T>, nothing_t>
-    , public std::conditional_t<is_nothing_v<T>, detail::_empty, cmp::rel<maybe<T>, T>>
+    , public std::conditional_t<is_nothing_v<T>, mitamagic::_empty, cmp::rel<maybe<T>, T>>
 {
     std::variant<nothing_t, just_t<T>> storage_;
     template<class, class> friend class maybe_replace_injector;

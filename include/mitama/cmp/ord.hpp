@@ -4,7 +4,7 @@
 #include <compare>
 #include <mitama/result/detail/fwd.hpp>
 
-namespace mitama::detail { struct _empty {}; }
+namespace mitama::mitamagic { struct _empty {}; }
 
 namespace mitama::cmp {
 

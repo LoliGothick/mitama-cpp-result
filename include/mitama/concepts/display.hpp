@@ -74,8 +74,9 @@ namespace mitama {
         }
     };
 
-    inline constexpr auto as_display(display auto const& value) {
-        return display_closure<decltype(value)>{value};
+    template <display T>
+    inline constexpr auto as_display(T&& value) {
+        return display_closure<T&&>{std::forward<T>(value)};
     }
 }
 

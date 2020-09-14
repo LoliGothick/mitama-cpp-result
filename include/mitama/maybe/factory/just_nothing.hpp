@@ -49,7 +49,7 @@ class [[nodiscard("warning: unused result which must be used")]] just_t<T>
     : public cmp::ord<just_t<T>, maybe>
     , public cmp::ord<just_t<T>, just_t>
     , public cmp::rel<just_t<T>, nothing_t>
-    , public std::conditional_t<is_nothing_v<T>, detail::_empty, cmp::rel<just_t<T>, T>>
+    , public std::conditional_t<is_nothing_v<T>, mitamagic::_empty, cmp::rel<just_t<T>, T>>
 {
     template <class...> friend class just_t;
     T x;
@@ -120,7 +120,7 @@ class [[nodiscard("warning: unused result which must be used")]] just_t<T&>
     : public cmp::ord<just_t<T&>, maybe>
     , public cmp::ord<just_t<T&>, just_t>
     , public cmp::rel<just_t<T&>, nothing_t>
-    , public std::conditional_t<is_nothing_v<T>, detail::_empty, cmp::rel<just_t<T>, T>>
+    , public std::conditional_t<is_nothing_v<T>, mitamagic::_empty, cmp::rel<just_t<T>, T>>
 {
     template <class...> friend class just_t;
     std::reference_wrapper<T> x;

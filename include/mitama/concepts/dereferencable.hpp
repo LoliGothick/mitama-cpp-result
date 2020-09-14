@@ -15,7 +15,7 @@ struct deref_type {
 };
 
 template <dereferencable For>
-using deref_type_t = deref_type<For>::type;
+using deref_type_t = typename deref_type<For>::type;
 
 }
 
