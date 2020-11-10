@@ -5,6 +5,7 @@
 #include <boost/hana/functional/overload_linearly.hpp>
 #include <boost/hana/functional/fix.hpp>
 #include <fmt/core.h>
+#include <sstream>
 
 namespace mitama {
     template <class T>
