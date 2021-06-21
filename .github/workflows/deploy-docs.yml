@@ -17,7 +17,7 @@ jobs:
         python-version: '3.8'
 
     - name: Restore & Cache Poetry and Dependences
-      uses: actions/cache@v1
+      uses: actions/cache@v2.1.6
       id: poetry-cache
       with:
         path: |

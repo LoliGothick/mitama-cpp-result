@@ -54,7 +54,7 @@ jobs:
         run: sudo apt-get install -y -qq pkg-config cmake libfmt-dev ${{ matrix.config.cc }}
 
       - name: Restore & Cache boost (${{ matrix.boost_version }})
-        uses: actions/cache@v1
+        uses: actions/cache@v2.1.6
         id: boost-cache
         with:
           path: ${{ runner.temp }}/libs/boost
