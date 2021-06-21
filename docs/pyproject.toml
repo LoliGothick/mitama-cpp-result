@@ -11,7 +11,7 @@ python-markdown-math = "^0.8"
 fontawesome-markdown = "^0.2.6"
 Pygments = "^2.7.2"
 mkdocs-material = "^6.1.6"
-mkdocs-awesome-pages-plugin = "^2.4.0"
+mkdocs-awesome-pages-plugin = "^2.5.0"
 
 [tool.poetry.dev-dependencies]
 
